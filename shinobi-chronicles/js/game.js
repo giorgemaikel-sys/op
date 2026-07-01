@@ -3,7 +3,17 @@
 class Game {
     constructor() {
         // Configurar canvas
-        this.canvas = document.getElementById('game-canvas');
+        this.canvas = document.getElementById('exploration-canvas');
+        if (!this.canvas) {
+            console.error('Canvas no encontrado');
+            return;
+        }
+        
+        // Configurar tamaño del canvas
+        const mainArea = document.getElementById('main-area');
+        this.canvas.width = mainArea ? mainArea.clientWidth : 800;
+        this.canvas.height = mainArea ? mainArea.clientHeight : 600;
+        
         this.ctx = this.canvas.getContext('2d');
         
         // Estado del juego
@@ -27,6 +37,15 @@ class Game {
 
     // Configurar manejadores de input
     setupInputHandlers() {
+        // Redimensionar canvas cuando cambia la ventana
+        window.addEventListener('resize', () => {
+            const mainArea = document.getElementById('main-area');
+            if (mainArea && this.canvas) {
+                this.canvas.width = mainArea.clientWidth;
+                this.canvas.height = mainArea.clientHeight;
+            }
+        });
+        
         // Tecla presionada
         window.addEventListener('keydown', (e) => {
             this.inputKeys[e.key] = true;

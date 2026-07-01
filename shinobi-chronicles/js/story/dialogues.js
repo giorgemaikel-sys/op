@@ -576,7 +576,11 @@ const dialogues = {
     ...sasukeRescueDialogues
 };
 
-// Exportar
+// Exportar para navegador
+window.DialogueSystem = DialogueSystem;
+window.DialogueNode = DialogueNode;
+window.dialogues = dialogues;
+
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { DialogueSystem, DialogueNode, dialogues };
 }

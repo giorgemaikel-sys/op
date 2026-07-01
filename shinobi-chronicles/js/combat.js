@@ -518,3 +518,6 @@ class CombatSystem {
         }
     }
 }
+
+// Exportar para navegador
+window.CombatSystem = CombatSystem;

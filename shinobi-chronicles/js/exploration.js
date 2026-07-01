@@ -5,14 +5,15 @@ class ExplorationSystem {
         this.game = game;
         this.ctx = game.ctx;
         
-        // Mapa de prueba (grid simple)
-        this.mapWidth = 800;
-        this.mapHeight = 600;
+        // Obtener tamaño del canvas
+        this.canvas = game.canvas;
+        this.mapWidth = this.canvas ? this.canvas.width : 800;
+        this.mapHeight = this.canvas ? this.canvas.height : 600;
         
         // Jugador
         this.player = {
-            x: 400,
-            y: 300,
+            x: this.mapWidth / 2,
+            y: this.mapHeight / 2,
             width: 40,
             height: 40,
             speed: 5,
@@ -180,6 +181,12 @@ class ExplorationSystem {
     // Dibujar el mapa de exploración
     render() {
         const ctx = this.ctx;
+        
+        // Actualizar tamaño del canvas si cambió
+        if (this.canvas) {
+            this.mapWidth = this.canvas.width;
+            this.mapHeight = this.canvas.height;
+        }
 
         // Fondo del mapa (pasto)
         ctx.fillStyle = '#3d6b1e';
@@ -400,3 +407,6 @@ class ExplorationSystem {
         }
     }
 }
+
+// Exportar para navegador
+window.ExplorationSystem = ExplorationSystem;

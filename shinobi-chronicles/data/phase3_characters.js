@@ -393,7 +393,12 @@ const waveJutsus = {
     }
 };
 
-// Exportar todo
+// Exportar todo para navegador
+window.allies = allies;
+window.academyEnemies = academyEnemies;
+window.waveEnemies = waveEnemies;
+window.waveJutsus = waveJutsus;
+
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { allies, academyEnemies, waveEnemies, waveJutsus };
 }

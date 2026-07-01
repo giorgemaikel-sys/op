@@ -470,7 +470,11 @@ class CutscenePlayer {
     }
 }
 
-// Exportar
+// Exportar para navegador
+window.StoryMode = StoryMode;
+window.CutscenePlayer = CutscenePlayer;
+window.cutscenes = cutscenes;
+
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { StoryMode, CutscenePlayer, cutscenes };
 }

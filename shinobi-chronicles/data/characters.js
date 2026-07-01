@@ -300,3 +300,6 @@ class ProgressionSystem {
         return regenAmount;
     }
 }
+
+// Exportar para navegador
+window.ProgressionSystem = ProgressionSystem;
