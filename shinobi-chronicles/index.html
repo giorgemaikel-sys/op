@@ -3,53 +3,140 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shinobi Chronicles - RPG de Naruto</title>
+    <title>Shinobi Chronicles - Fase 3: Saga de la Academia</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            background-color: #1a1a2e;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        #game-container {
-            position: relative;
-            width: 800px;
-            height: 600px;
-            border: 4px solid #4a4a6a;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-        }
-        
-        #game-canvas {
-            display: block;
-            background-color: #2d5016;
-        }
-        
-        .hidden {
-            display: none !important;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #1a1a2e, #16213e); color: #fff; overflow: hidden; }
+        #game-container { width: 100vw; height: 100vh; position: relative; display: flex; flex-direction: column; }
+        #header { background: rgba(0,0,0,0.8); padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ff6b35; }
+        .stats-bar { display: flex; gap: 20px; flex-wrap: wrap; }
+        .stat { display: flex; align-items: center; gap: 8px; }
+        .stat-label { font-weight: bold; color: #ffd700; }
+        .bar-container { width: 150px; height: 20px; background: #333; border-radius: 10px; overflow: hidden; }
+        .hp-bar { background: linear-gradient(90deg, #ff4444, #ff6b6b); height: 100%; transition: width 0.3s; }
+        .chakra-bar { background: linear-gradient(90deg, #4444ff, #6b6bff); height: 100%; transition: width 0.3s; }
+        .xp-bar { background: linear-gradient(90deg, #44ff44, #6bff6b); height: 100%; transition: width 0.3s; }
+        #main-area { flex: 1; position: relative; display: flex; }
+        #exploration-canvas { flex: 1; background: #2d5016; cursor: crosshair; }
+        #side-panel { width: 300px; background: rgba(0,0,0,0.9); padding: 15px; border-left: 2px solid #ff6b35; overflow-y: auto; }
+        .panel-section { margin-bottom: 20px; }
+        .panel-title { font-size: 18px; color: #ff6b35; margin-bottom: 10px; border-bottom: 1px solid #ff6b35; padding-bottom: 5px; }
+        .mission-item { background: rgba(255,107,53,0.1); border: 1px solid #ff6b35; border-radius: 5px; padding: 10px; margin-bottom: 10px; }
+        .mission-title { font-weight: bold; color: #ffd700; }
+        .mission-progress { font-size: 12px; color: #aaa; margin-top: 5px; }
+        #combat-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 100; }
+        #combat-screen.active { display: flex; }
+        .combat-arena { display: flex; justify-content: space-between; align-items: center; width: 80%; max-width: 900px; margin-bottom: 30px; }
+        .fighter { text-align: center; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 10px; min-width: 200px; }
+        .fighter-name { font-size: 20px; font-weight: bold; color: #ffd700; margin-bottom: 10px; }
+        .vs-text { font-size: 48px; font-weight: bold; color: #ff4444; text-shadow: 0 0 20px #ff4444; }
+        .combat-menu { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; width: 80%; max-width: 600px; }
+        .combat-btn { padding: 15px 30px; font-size: 16px; border: 2px solid #ff6b35; background: rgba(255,107,53,0.2); color: #fff; border-radius: 8px; cursor: pointer; transition: all 0.3s; }
+        .combat-btn:hover:not(:disabled) { background: rgba(255,107,53,0.5); transform: scale(1.05); }
+        .combat-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .jutsu-btn { grid-column: span 2; background: rgba(68,68,255,0.2); border-color: #4444ff; }
+        .jutsu-btn:hover:not(:disabled) { background: rgba(68,68,255,0.5); }
+        #dialogue-screen { position: absolute; bottom: 0; left: 0; width: 100%; height: 200px; background: rgba(0,0,0,0.95); border-top: 3px solid #ffd700; display: none; flex-direction: column; padding: 20px; z-index: 90; }
+        #dialogue-screen.active { display: flex; }
+        .dialogue-speaker { font-size: 18px; font-weight: bold; color: #ff6b35; margin-bottom: 10px; }
+        .dialogue-text { font-size: 16px; line-height: 1.5; flex: 1; }
+        .dialogue-choices { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
+        .choice-btn { padding: 10px 20px; background: rgba(255,107,53,0.3); border: 1px solid #ff6b35; color: #fff; border-radius: 5px; cursor: pointer; transition: all 0.3s; }
+        .choice-btn:hover { background: rgba(255,107,53,0.6); }
+        #notification { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.9); border: 3px solid #ffd700; padding: 30px 50px; border-radius: 10px; text-align: center; display: none; z-index: 200; }
+        #notification.active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+        #controls-hint { position: absolute; bottom: 10px; left: 10px; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 5px; font-size: 12px; }
+        .key { display: inline-block; background: #ff6b35; color: #000; padding: 2px 8px; border-radius: 3px; font-weight: bold; margin: 0 3px; }
+        #battle-log { position: absolute; top: 80px; left: 10px; width: 300px; max-height: 200px; overflow-y: auto; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 5px; font-size: 12px; display: none; }
+        #battle-log.active { display: block; }
+        .log-entry { margin-bottom: 5px; padding: 3px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .log-player { color: #44ff44; }
+        .log-enemy { color: #ff4444; }
+        .log-system { color: #ffd700; }
     </style>
 </head>
 <body>
     <div id="game-container">
-        <canvas id="game-canvas" width="800" height="600"></canvas>
+        <div id="header">
+            <div class="stats-bar">
+                <div class="stat"><span class="stat-label">Nivel:</span><span id="level-display">1</span></div>
+                <div class="stat"><span class="stat-label">HP:</span><div class="bar-container"><div class="hp-bar" id="hp-bar" style="width: 100%"></div></div><span id="hp-text">100/100</span></div>
+                <div class="stat"><span class="stat-label">Chakra:</span><div class="bar-container"><div class="chakra-bar" id="chakra-bar" style="width: 100%"></div></div><span id="chakra-text">50/50</span></div>
+                <div class="stat"><span class="stat-label">XP:</span><div class="bar-container"><div class="xp-bar" id="xp-bar" style="width: 0%"></div></div><span id="xp-text">0/100</span></div>
+                <div class="stat"><span class="stat-label">Ryo:</span><span id="ryo-display" style="color: #ffd700;">0</span></div>
+            </div>
+            <div class="stat"><span class="stat-label">Misión:</span><span id="current-mission">Exploración</span></div>
+        </div>
+        <div id="main-area">
+            <canvas id="exploration-canvas"></canvas>
+            <div id="side-panel">
+                <div class="panel-section">
+                    <div class="panel-title">📜 Misiones Activas</div>
+                    <div id="active-missions-list"><p style="color: #888;">No hay misiones activas</p></div>
+                </div>
+                <div class="panel-section">
+                    <div class="panel-title">🎯 Historia</div>
+                    <div id="story-progress">
+                        <p>Arc: <span id="story-arc">Academia Ninja</span></p>
+                        <p>Capítulo: <span id="story-chapter">1</span>/8</p>
+                        <div class="bar-container" style="margin-top: 10px;"><div class="xp-bar" id="story-bar" style="width: 0%"></div></div>
+                    </div>
+                </div>
+                <div class="panel-section">
+                    <div class="panel-title">⚡ Jutsus</div>
+                    <div id="jutsus-list" style="font-size: 12px;"></div>
+                </div>
+            </div>
+            <div id="battle-log"></div>
+            <div id="controls-hint"><span class="key">WASD</span> Mover | <span class="key">E</span> Interactuar | <span class="key">M</span> Misiones</div>
+        </div>
+        <div id="combat-screen">
+            <div class="combat-arena">
+                <div class="fighter" id="player-fighter">
+                    <div class="fighter-name" id="combat-player-name">Naruto</div>
+                    <div class="bar-container"><div class="hp-bar" id="combat-hp-bar" style="width: 100%"></div></div>
+                    <div id="combat-hp-text">100/100</div>
+                    <div class="bar-container" style="margin-top: 5px;"><div class="chakra-bar" id="combat-chakra-bar" style="width: 100%"></div></div>
+                    <div id="combat-chakra-text">50/50</div>
+                </div>
+                <div class="vs-text">VS</div>
+                <div class="fighter" id="enemy-fighter">
+                    <div class="fighter-name" id="combat-enemy-name">Enemigo</div>
+                    <div class="bar-container"><div class="hp-bar" id="combat-enemy-hp-bar" style="width: 100%"></div></div>
+                    <div id="combat-enemy-hp-text">100/100</div>
+                </div>
+            </div>
+            <div class="combat-menu" id="combat-menu">
+                <button class="combat-btn" onclick="game.combatAction('attack')">⚔️ Atacar</button>
+                <button class="combat-btn" onclick="game.combatAction('defend')">🛡️ Defender</button>
+                <button class="combat-btn jutsu-btn" onclick="game.combatAction('jutsu', 'clone_jutsu')" id="btn-clone">Clon Básico (10 CHK)</button>
+                <button class="combat-btn jutsu-btn" onclick="game.combatAction('jutsu', 'shadow_clone')" id="btn-shadow">Clon Sombra (20 CHK)</button>
+                <button class="combat-btn jutsu-btn" onclick="game.combatAction('item')" id="btn-item">🧪 Item</button>
+                <button class="combat-btn" onclick="game.combatAction('run')" style="border-color: #888;">🏃 Huir</button>
+            </div>
+            <div id="combat-message" style="margin-top: 20px; font-size: 18px; color: #ffd700; min-height: 30px;"></div>
+        </div>
+        <div id="dialogue-screen">
+            <div class="dialogue-speaker" id="dialogue-speaker">???</div>
+            <div class="dialogue-text" id="dialogue-text">...</div>
+            <div class="dialogue-choices" id="dialogue-choices"></div>
+        </div>
+        <div id="notification">
+            <h2 id="notification-title" style="color: #ffd700; margin-bottom: 10px;">¡Título!</h2>
+            <p id="notification-message">Mensaje</p>
+        </div>
     </div>
-    
     <script src="data/characters.js"></script>
     <script src="data/jutsus.js"></script>
+    <script src="data/phase3_characters.js"></script>
+    <script src="data/missions/missions.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/combat.js"></script>
     <script src="js/exploration.js"></script>
+    <script src="js/story/dialogues.js"></script>
+    <script src="js/story/story.js"></script>
     <script src="js/game.js"></script>
+    <script>window.addEventListener('load', () => { game.init(); });</script>
 </body>
 </html>

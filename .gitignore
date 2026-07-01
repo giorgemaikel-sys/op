@@ -2,8 +2,7 @@
 # Build artifacts
 dist/
 build/
-*.min.js
-*.bundle.js
+*.js
 
 # Dependencies
 node_modules/
@@ -21,20 +20,27 @@ node_modules/
 .vscode/
 .idea/
 
-# Coverage
-coverage/
-htmlcov/
-.coverage
-
 # Python
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-.Python
+
+# Java
+*.class
+*.jar
+*.war
+*.ear
+target/
+.gradle/
+
+# C/C++
+*.o
+*.obj
 *.so
-*.egg-info/
-.eggs/
+*.a
+*.dll
+*.exe
 
 # Compression
 *.zip
@@ -59,13 +65,4 @@ __pycache__/
 *.tar.bz2
 *.tar.xz
 *.tar.zst
-
-# System files
-.DS_Store
-Thumbs.db
-
-# Testing
-.nyc_output/
-coverage/
-junit.xml
 ```
