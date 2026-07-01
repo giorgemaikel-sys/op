@@ -10,6 +10,9 @@ class Game {
         this.currentState = 'exploration'; // exploration, combat
         this.isRunning = false;
         
+        // Sistema de progresión
+        this.progression = new ProgressionSystem();
+        
         // Sistemas
         this.exploration = new ExplorationSystem(this);
         this.combat = new CombatSystem(this);
@@ -52,7 +55,8 @@ class Game {
         this.isRunning = true;
         this.gameLoop();
         console.log('¡Shinobi Chronicles ha iniciado!');
-        console.log('Fase 1: Núcleo Técnico - Exploración + Combate por Turnos');
+        console.log('Fase 2: Sistema de Progresión - Niveles, Jutsus y Estadísticas');
+        console.log('Usa P para abrir menú de progreso (fuera de combate)');
     }
 
     // Game Loop principal
@@ -107,6 +111,16 @@ class Game {
     resume() {
         this.isRunning = true;
         this.gameLoop();
+    }
+
+    // Recuperar personaje después del combate
+    recoverPlayer() {
+        const player = this.exploration.player;
+        if (player) {
+            const healedHP = this.progression.regenerateHealth(player, player.stats.maxHp);
+            const recoveredChakra = this.progression.regenerateChakra(player, player.stats.maxChakra);
+            console.log(`Personaje recuperado: +${healedHP} HP, +${recoveredChakra} CHK`);
+        }
     }
 }
 

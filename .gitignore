@@ -1,11 +1,12 @@
 ```
-# Dependencies
-node_modules/
-
 # Build artifacts
 dist/
 build/
-target/
+*.min.js
+*.bundle.js
+
+# Dependencies
+node_modules/
 
 # Logs and temp files
 *.log
@@ -20,13 +21,51 @@ target/
 .vscode/
 .idea/
 
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
 # Python
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 .Python
-venv/
-.venv/
-.env
+*.so
+*.egg-info/
+.eggs/
+
+# Compression
+*.zip
+*.gz
+*.tar
+*.tgz
+*.bz2
+*.xz
+*.7z
+*.rar
+*.zst
+*.lz4
+*.lzh
+*.cab
+*.arj
+*.rpm
+*.deb
+*.Z
+*.lz
+*.lzo
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tar.zst
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Testing
+.nyc_output/
+coverage/
+junit.xml
 ```

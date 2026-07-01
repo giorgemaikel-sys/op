@@ -211,12 +211,30 @@ class CombatSystem {
             this.combatResult = 'victory';
             this.log('¡Victoria! Has derrotado a tus enemigos.');
             
-            // Repartir experiencia
+            // Repartir experiencia y registrar progresión
             this.playerTeam.forEach(player => {
                 this.enemyTeam.forEach(enemy => {
-                    player.exp += enemy.exp;
+                    // Agregar experiencia usando ProgressionSystem
+                    if (this.game.progression) {
+                        const leveledUp = this.game.progression.addExperience(player, enemy.exp);
+                        if (leveledUp) {
+                            this.log(`¡${player.name} subió al nivel ${player.level}!`);
+                        }
+                    } else {
+                        // Fallback si no existe progression
+                        player.exp += enemy.exp;
+                    }
+                    
+                    // Registrar en estadísticas de progreso
+                    if (this.game.progression) {
+                        this.game.progression.playerProgress.totalEnemiesDefeated++;
+                    }
                 });
             });
+            
+            if (this.game.progression) {
+                this.game.progression.playerProgress.totalBattlesWon++;
+            }
         } else if (allPlayersDefeated) {
             this.combatResult = 'defeat';
             this.log('Derrota... Has sido vencido.');
@@ -278,10 +296,10 @@ class CombatSystem {
         ctx.textAlign = 'center';
         ctx.fillText(character.sprite, x, y);
         
-        // Nombre
+        // Nombre y nivel
         ctx.font = '16px Arial';
         ctx.fillStyle = '#ffffff';
-        ctx.fillText(character.name, x, y - 60);
+        ctx.fillText(`${character.name} (Lv.${character.level})`, x, y - 60);
         
         // Barras de HP y Chakra
         const barWidth = 200;
@@ -300,6 +318,12 @@ class CombatSystem {
         if (character.element) {
             ctx.font = '20px Arial';
             ctx.fillText(ELEMENTS[character.element].icon, x + 110, y - 30);
+        }
+        
+        // Mostrar buffs activos (si existen)
+        if (character.buffs && character.buffs.length > 0) {
+            ctx.font = '14px Arial';
+            ctx.fillText(`🔥 Buffs: ${character.buffs.length}`, x, y + 30);
         }
     }
 
@@ -344,6 +368,15 @@ class CombatSystem {
         
         // Opciones del menú principal
         if (this.menuState === 'main') {
+            const player = this.playerTeam.find(p => p.stats.hp > 0);
+            
+            // Mostrar nivel y puntos de habilidad disponibles
+            if (player && player.skillPoints > 0) {
+                ctx.font = '14px Arial';
+                ctx.fillStyle = '#44ff44';
+                ctx.fillText(`⭐ Puntos disponibles: ${player.skillPoints}`, menuX + 20, menuY + 30);
+            }
+            
             const options = [
                 { key: '1', text: 'Atacar (Taijutsu)' },
                 { key: '2', text: 'Jutsu' },
@@ -365,18 +398,26 @@ class CombatSystem {
             ctx.fillText('Selecciona un Jutsu:', menuX + 20, menuY + 50);
             
             const player = this.playerTeam.find(p => p.stats.hp > 0);
-            const availableJutsus = Object.values(JUTSUS).filter(
-                j => j.chakraCost <= player.stats.chakra
+            
+            // Filtrar jutsus conocidos por el jugador
+            const knownJutsus = Object.values(JUTSUS).filter(
+                j => player.knownJutsus.includes(j.id) && j.chakraCost <= player.stats.chakra
             );
             
-            availableJutsus.forEach((jutsu, index) => {
-                const isSelected = index === this.selectedJutsuIndex;
-                const canUse = player.stats.chakra >= jutsu.chakraCost;
-                
-                ctx.fillStyle = isSelected ? '#ffff00' : (canUse ? '#ffffff' : '#888888');
-                const costText = jutsu.chakraCost > 0 ? `(${jutsu.chakraCost} CHK)` : '';
-                ctx.fillText(`[${index + 1}] ${jutsu.name} ${costText}`, menuX + 20, menuY + 80 + index * 35);
-            });
+            if (knownJutsus.length === 0) {
+                ctx.fillStyle = '#ff8888';
+                ctx.fillText('No tienes jutsus disponibles', menuX + 20, menuY + 90);
+            } else {
+                knownJutsus.forEach((jutsu, index) => {
+                    const isSelected = index === this.selectedJutsuIndex;
+                    const canUse = player.stats.chakra >= jutsu.chakraCost;
+                    
+                    ctx.fillStyle = isSelected ? '#ffff00' : (canUse ? '#ffffff' : '#888888');
+                    const costText = jutsu.chakraCost > 0 ? `(${jutsu.chakraCost} CHK)` : '';
+                    const typeIcon = jutsu.type === 'taijutsu' ? '👊' : (jutsu.type === 'genjutsu' ? '👁️' : '🌀');
+                    ctx.fillText(`[${index + 1}] ${typeIcon} ${jutsu.name} ${costText}`, menuX + 20, menuY + 80 + index * 35);
+                });
+            }
             
             // Opción para volver
             ctx.fillStyle = '#ff8888';

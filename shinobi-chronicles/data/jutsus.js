@@ -83,6 +83,105 @@ const JUTSUS = {
         effects: ['confuse'],
         description: 'Confunde al enemigo reduciendo su precisión',
         animation: 'illusion'
+    },
+    
+    // Clon de Sombra (desbloqueable nivel 4)
+    shadow_clone: {
+        id: 'shadow_clone',
+        name: 'Clon de Sombra',
+        rank: 'B',
+        type: 'ninjutsu',
+        element: null,
+        chakraCost: 25,
+        baseDamage: 15,
+        effects: ['multi_hit'],
+        description: 'Crea clones que atacan simultáneamente',
+        animation: 'clone'
+    },
+    
+    // Rasengan (desbloqueable nivel 5)
+    rasengan: {
+        id: 'rasengan',
+        name: 'Rasengan',
+        rank: 'A',
+        type: 'ninjutsu',
+        element: null,
+        chakraCost: 35,
+        baseDamage: 45,
+        effects: ['ignore_defense'],
+        description: 'Esfera de chakra giratoria de alto poder',
+        animation: 'rasengan'
+    },
+    
+    // Chidori (desbloqueable nivel 6)
+    chidori: {
+        id: 'chidori',
+        name: 'Chidori',
+        rank: 'A',
+        type: 'ninjutsu',
+        element: 'lightning',
+        chakraCost: 40,
+        baseDamage: 50,
+        effects: ['crit_boost'],
+        description: 'Mil pájaros: ataque de rayo perforante',
+        animation: 'chidori'
+    },
+    
+    // Modo Sabio (desbloqueable nivel 7)
+    sage_mode: {
+        id: 'sage_mode',
+        name: 'Modo Sabio',
+        rank: 'S',
+        type: 'ninjutsu',
+        element: null,
+        chakraCost: 50,
+        baseDamage: 0,
+        effects: ['buff_all_stats'],
+        buffDuration: 3,
+        description: 'Aumenta todas las estadísticas temporalmente',
+        animation: 'sage'
+    },
+    
+    // Chakra del Nueve Colas (desbloqueable nivel 8)
+    nine_tails_chakra: {
+        id: 'nine_tails_chakra',
+        name: 'Manto Kyubi',
+        rank: 'S',
+        type: 'ninjutsu',
+        element: null,
+        chakraCost: 60,
+        baseDamage: 30,
+        effects: ['damage_aura', 'regen'],
+        description: 'Libera el poder del Zorro de Nueve Colas',
+        animation: 'kyubi'
+    },
+    
+    // Sabio de los Seis Caminos (desbloqueable nivel 9)
+    six_paths_sage: {
+        id: 'six_paths_sage',
+        name: 'Sabio Seis Caminos',
+        rank: 'S',
+        type: 'ninjutsu',
+        element: null,
+        chakraCost: 80,
+        baseDamage: 70,
+        effects: ['god_mode', 'fly'],
+        description: 'Poder divino del Sabio de los Seis Caminos',
+        animation: 'six_paths'
+    },
+    
+    // Bomba Bestia con Cola (desbloqueable nivel 10)
+    bijuu_bomb: {
+        id: 'bijuu_bomb',
+        name: 'Bomba Bijuu',
+        rank: 'S',
+        type: 'ninjutsu',
+        element: null,
+        chakraCost: 100,
+        baseDamage: 100,
+        effects: ['massive_aoe'],
+        description: 'Ataque masivo de energía concentrada',
+        animation: 'bijuu_bomb'
     }
 };
 
