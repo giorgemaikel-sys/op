@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dragon Ball: Campos de Batalla 3D</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: 'Arial', sans-serif; background: #000; }
+        #game-container { position: relative; width: 100vw; height: 100vh; }
+        
+        /* UI Overlay */
+        #ui-layer {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        /* HUD */
+        .hud-panel {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: auto;
+        }
+
+        .bar-container {
+            width: 300px;
+            background: rgba(0,0,0,0.6);
+            border: 2px solid #fff;
+            border-radius: 10px;
+            margin-bottom: 5px;
+            position: relative;
+        }
+
+        .bar-label {
+            position: absolute;
+            top: -20px;
+            left: 0;
+            color: white;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px black;
+        }
+
+        .bar-fill {
+            height: 20px;
+            width: 100%;
+            transition: width 0.2s;
+        }
+
+        #player-hp-bar { background: #4caf50; }
+        #player-ki-bar { background: #2196f3; }
+        #enemy-hp-bar { background: #f44336; }
+        #enemy-ki-bar { background: #9c27b0; }
+
+        /* Controls */
+        #controls-area {
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            pointer-events: auto;
+            align-items: flex-end;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            transition: transform 0.1s, background 0.2s;
+            color: white;
+        }
+
+        .btn:active { transform: scale(0.95); }
+        .btn-attack { background: #ff5722; }
+        .btn-transform { background: #ffc107; color: black; }
+        .btn-recharge { background: #2196f3; }
+
+        /* Character Selection Modal */
+        #char-select {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            pointer-events: auto;
+            z-index: 10;
+        }
+
+        #char-select h1 { color: #ffc107; font-size: 48px; margin-bottom: 40px; text-shadow: 0 0 10px #ff5722; }
+        
+        .char-cards { display: flex; gap: 30px; }
+        
+        .char-card {
+            background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+            border: 2px solid #555;
+            border-radius: 15px;
+            padding: 20px;
+            width: 200px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .char-card:hover {
+            transform: translateY(-10px);
+            border-color: #ffc107;
+            box-shadow: 0 0 20px rgba(255, 193, 7, 0.5);
+        }
+
+        .char-preview {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 15px;
+            border-radius: 50%;
+        }
+
+        .char-name { color: white; font-size: 24px; font-weight: bold; }
+        .char-desc { color: #aaa; font-size: 14px; margin-top: 10px; }
+
+        /* Transformation Status */
+        #transform-status {
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #ffc107;
+            font-size: 32px;
+            font-weight: bold;
+            text-shadow: 0 0 10px #ff5722;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        /* Instructions */
+        #instructions {
+            position: absolute;
+            bottom: 120px;
+            left: 20px;
+            color: rgba(255,255,255,0.7);
+            font-size: 14px;
+            background: rgba(0,0,0,0.5);
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container"></div>
+    
+    <div id="ui-layer">
+        <div class="hud-panel">
+            <div>
+                <div class="bar-container">
+                    <span class="bar-label">JUGADOR HP</span>
+                    <div id="player-hp-bar" class="bar-fill"></div>
+                </div>
+                <div class="bar-container">
+                    <span class="bar-label">JUGADOR KI</span>
+                    <div id="player-ki-bar" class="bar-fill"></div>
+                </div>
+            </div>
+            <div>
+                <div class="bar-container">
+                    <span class="bar-label">ENEMIGO HP</span>
+                    <div id="enemy-hp-bar" class="bar-fill"></div>
+                </div>
+                <div class="bar-container">
+                    <span class="bar-label">ENEMIGO KI</span>
+                    <div id="enemy-ki-bar" class="bar-fill"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="transform-status">¡TRANSFORMACIÓN!</div>
+
+        <div id="instructions">
+            WASD / Flechas: Moverse<br>
+            ESPACIO: Saltar
+        </div>
+
+        <div id="controls-area">
+            <button class="btn btn-recharge" id="btn-recharge">Recargar Ki (R)</button>
+            <button class="btn btn-transform" id="btn-transform">Transformarse (T)</button>
+            <button class="btn btn-attack" id="btn-attack">Atacar (Espacio/Click)</button>
+        </div>
+    </div>
+
+    <!-- Character Selection -->
+    <div id="char-select">
+        <h1>ELIGE TU LUCHADOR</h1>
+        <div class="char-cards">
+            <div class="char-card" onclick="selectCharacter('goku')">
+                <div class="char-preview" style="background: #ff9800;"></div>
+                <div class="char-name">GOKU</div>
+                <div class="char-desc">Equilibrado<br>Transformación: Super Saiyan</div>
+            </div>
+            <div class="char-card" onclick="selectCharacter('vegeta')">
+                <div class="char-preview" style="background: #3f51b5;"></div>
+                <div class="char-name">VEGETA</div>
+                <div class="char-desc">Ataque Fuerte<br>Transformación: Super Saiyan Blue</div>
+            </div>
+            <div class="char-card" onclick="selectCharacter('freezer')">
+                <div class="char-preview" style="background: #9c27b0;"></div>
+                <div class="char-name">FREEZER</div>
+                <div class="char-desc">Rápido<br>Transformación: Golden Freezer</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Game State
+        let gameActive = false;
+        let playerChar = null;
+        let enemyChar = null;
+        let scene, camera, renderer;
+        let playerMesh, enemyMesh;
+        let ground;
+        let particles = [];
+        
+        // Character Configurations
+        const characters = {
+            goku: {
+                name: "Goku",
+                color: 0xff6600,
+                secondaryColor: 0x2196f3,
+                transformColor: 0xffff00,
+                transformName: "Super Saiyan",
+                speed: 0.15,
+                attackDamage: 10,
+                transformCost: 50
+            },
+            vegeta: {
+                name: "Vegeta",
+                color: 0x3f51b5,
+                secondaryColor: 0xffffff,
+                transformColor: 0x00bcd4,
+                transformName: "Super Saiyan Blue",
+                speed: 0.12,
+                attackDamage: 15,
+                transformCost: 60
+            },
+            freezer: {
+                name: "Freezer",
+                color: 0x9c27b0,
+                secondaryColor: 0xffffff,
+                transformColor: 0xffd700,
+                transformName: "Golden Freezer",
+                speed: 0.18,
+                attackDamage: 12,
+                transformCost: 70
+            }
+        };
+
+        // Player and Enemy Objects
+        const player = {
+            hp: 100,
+            maxHp: 100,
+            ki: 100,
+            maxKi: 100,
+            transformed: false,
+            config: null,
+            mesh: null,
+            aura: null
+        };
+
+        const enemy = {
+            hp: 100,
+            maxHp: 100,
+            ki: 100,
+            maxKi: 100,
+            transformed: false,
+            config: null,
+            mesh: null,
+            aura: null,
+            state: 'idle', // idle, chasing, attacking, recharging
+            stateTimer: 0
+        };
+
+        // Initialize Three.js
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x87ceeb);
+            scene.fog = new THREE.Fog(0x87ceeb, 20, 100);
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 5, 10);
+            camera.lookAt(0, 0, 0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            document.getElementById('game-container').appendChild(renderer.domElement);
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight.position.set(10, 20, 10);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 2048;
+            dirLight.shadow.mapSize.height = 2048;
+            scene.add(dirLight);
+
+            // Ground
+            const groundGeo = new THREE.PlaneGeometry(100, 100);
+            const groundMat = new THREE.MeshStandardMaterial({ 
+                color: 0x3a5f0b,
+                roughness: 0.8
+            });
+            ground = new THREE.Mesh(groundGeo, groundMat);
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            scene.add(ground);
+
+            // Rocks/Environment
+            for(let i = 0; i < 15; i++) {
+                const rockGeo = new THREE.DodecahedronGeometry(Math.random() * 1.5 + 0.5);
+                const rockMat = new THREE.MeshStandardMaterial({ color: 0x555555 });
+                const rock = new THREE.Mesh(rockGeo, rockMat);
+                
+                const angle = Math.random() * Math.PI * 2;
+                const radius = 10 + Math.random() * 30;
+                rock.position.set(
+                    Math.cos(angle) * radius,
+                    0.5,
+                    Math.sin(angle) * radius
+                );
+                rock.castShadow = true;
+                rock.receiveShadow = true;
+                scene.add(rock);
+            }
+
+            // Event Listeners
+            window.addEventListener('resize', onWindowResize);
+            document.addEventListener('keydown', onKeyDown);
+            
+            // Button Listeners
+            document.getElementById('btn-attack').addEventListener('click', () => performAttack(player));
+            document.getElementById('btn-transform').addEventListener('click', () => performTransform(player));
+            document.getElementById('btn-recharge').addEventListener('click', () => rechargeKi(player));
+
+            animate();
+        }
+
+        function selectCharacter(charName) {
+            playerChar = charName;
+            player.config = characters[charName];
+            
+            // Select random enemy different from player
+            const availableEnemies = ['goku', 'vegeta', 'freezer'].filter(c => c !== charName);
+            enemyChar = availableEnemies[Math.floor(Math.random() * availableEnemies.length)];
+            enemy.config = characters[enemyChar];
+
+            createCharacterMesh(player, player.config, -5);
+            createCharacterMesh(enemy, enemy.config, 5);
+
+            document.getElementById('char-select').style.display = 'none';
+            gameActive = true;
+        }
+
+        function createCharacterMesh(characterObj, config, xPos) {
+            const group = new THREE.Group();
+
+            // Body
+            const bodyGeo = new THREE.CapsuleGeometry(0.7, 1.5, 4, 8);
+            const bodyMat = new THREE.MeshStandardMaterial({ color: config.color });
+            const body = new THREE.Mesh(bodyGeo, bodyMat);
+            body.position.y = 1.5;
+            body.castShadow = true;
+            group.add(body);
+
+            // Head
+            const headGeo = new THREE.SphereGeometry(0.6, 16, 16);
+            const headMat = new THREE.MeshStandardMaterial({ color: 0xffccaa }); // Skin tone
+            const head = new THREE.Mesh(headGeo, headMat);
+            head.position.y = 2.8;
+            head.castShadow = true;
+            group.add(head);
+
+            // Hair (simple representation)
+            const hairGeo = new THREE.ConeGeometry(0.7, 1, 8);
+            const hairMat = new THREE.MeshStandardMaterial({ color: 0x000000 });
+            const hair = new THREE.Mesh(hairGeo, hairMat);
+            hair.position.y = 3.4;
+            hair.rotation.x = Math.PI;
+            group.add(hair);
+            characterObj.hairMesh = hair;
+
+            // Aura (initially invisible)
+            const auraGeo = new THREE.SphereGeometry(1.2, 16, 16);
+            const auraMat = new THREE.MeshBasicMaterial({ 
+                color: config.transformColor, 
+                transparent: true, 
+                opacity: 0,
+                blending: THREE.AdditiveBlending
+            });
+            const aura = new THREE.Mesh(auraGeo, auraMat);
+            aura.position.y = 1.5;
+            group.add(aura);
+            characterObj.aura = aura;
+
+            characterObj.mesh = group;
+            characterObj.mesh.position.x = xPos;
+            scene.add(group);
+        }
+
+        function updateUI() {
+            document.getElementById('player-hp-bar').style.width = `${(player.hp / player.maxHp) * 100}%`;
+            document.getElementById('player-ki-bar').style.width = `${(player.ki / player.maxKi) * 100}%`;
+            document.getElementById('enemy-hp-bar').style.width = `${(enemy.hp / enemy.maxHp) * 100}%`;
+            document.getElementById('enemy-ki-bar').style.width = `${(enemy.ki / enemy.maxKi) * 100}%`;
+        }
+
+        function showTransformEffect(character) {
+            const statusEl = document.getElementById('transform-status');
+            statusEl.innerText = `¡${character.config.transformName}!`;
+            statusEl.style.opacity = 1;
+            
+            // Particle explosion
+            for(let i = 0; i < 30; i++) {
+                createParticle(character.mesh.position.clone(), character.config.transformColor);
+            }
+
+            setTimeout(() => {
+                statusEl.style.opacity = 0;
+            }, 2000);
+        }
+
+        function createParticle(pos, color) {
+            const geo = new THREE.SphereGeometry(0.2, 4, 4);
+            const mat = new THREE.MeshBasicMaterial({ color: color });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.copy(pos);
+            
+            // Random velocity
+            mesh.userData.velocity = new THREE.Vector3(
+                (Math.random() - 0.5) * 0.5,
+                (Math.random() - 0.5) * 0.5,
+                (Math.random() - 0.5) * 0.5
+            );
+            mesh.userData.life = 1.0;
+            
+            scene.add(mesh);
+            particles.push(mesh);
+        }
+
+        function performAttack(attacker) {
+            if(!gameActive) return;
+            
+            const defender = attacker === player ? enemy : player;
+            const distance = attacker.mesh.position.distanceTo(defender.mesh.position);
+            
+            if(distance < 4) {
+                // Hit
+                defender.hp -= attacker.config.attackDamage;
+                createParticle(defender.mesh.position.clone(), 0xff0000);
+                
+                // Knockback
+                const direction = new THREE.Vector3().subVectors(defender.mesh.position, attacker.mesh.position).normalize();
+                defender.mesh.position.add(direction.multiplyScalar(2));
+                
+                if(defender.hp <= 0) {
+                    defender.hp = 0;
+                    endGame(attacker === player);
+                }
+            } else {
+                // Miss animation lunge
+                const direction = new THREE.Vector3().subVectors(defender.mesh.position, attacker.mesh.position).normalize();
+                attacker.mesh.position.add(direction.multiplyScalar(1));
+            }
+            
+            updateUI();
+        }
+
+        function performTransform(character) {
+            if(!gameActive || character.transformed) return;
+            if(character.ki < character.config.transformCost) return;
+
+            character.ki -= character.config.transformCost;
+            character.transformed = true;
+            
+            // Visual changes
+            character.aura.material.opacity = 0.6;
+            character.hairMesh.material.color.setHex(character.config.transformColor);
+            
+            // Scale up slightly
+            character.mesh.scale.set(1.2, 1.2, 1.2);
+            
+            showTransformEffect(character);
+            updateUI();
+        }
+
+        function rechargeKi(character) {
+            if(!gameActive) return;
+            character.ki = Math.min(character.maxKi, character.ki + 30);
+            updateUI();
+        }
+
+        function updateAI() {
+            if(!gameActive || enemy.hp <= 0) return;
+
+            const dist = enemy.mesh.position.distanceTo(player.mesh.position);
+            enemy.stateTimer--;
+
+            // Simple AI State Machine
+            if(enemy.stateTimer <= 0) {
+                // Decide new state
+                const rand = Math.random();
+                if(dist > 8) {
+                    enemy.state = 'chasing';
+                    enemy.stateTimer = 60 + Math.random() * 60;
+                } else if(rand < 0.4) {
+                    enemy.state = 'attacking';
+                    enemy.stateTimer = 20;
+                } else if(rand < 0.7 && enemy.ki < 50) {
+                    enemy.state = 'recharging';
+                    enemy.stateTimer = 40;
+                } else {
+                    enemy.state = 'chasing';
+                    enemy.stateTimer = 30;
+                }
+            }
+
+            // Execute State
+            const direction = new THREE.Vector3().subVectors(player.mesh.position, enemy.mesh.position).normalize();
+            
+            if(enemy.state === 'chasing') {
+                enemy.mesh.position.add(direction.multiplyScalar(enemy.config.speed * 0.8));
+                enemy.mesh.lookAt(player.mesh.position);
+            } else if(enemy.state === 'attacking') {
+                if(dist < 4) {
+                    performAttack(enemy);
+                    enemy.stateTimer = 0; // Reset to decide again
+                } else {
+                    enemy.mesh.position.add(direction.multiplyScalar(enemy.config.speed));
+                }
+            } else if(enemy.state === 'recharging') {
+                rechargeKi(enemy);
+                enemy.mesh.position.add(direction.multiplyScalar(-0.05)); // Back away slightly
+            }
+
+            // Enemy Transform Logic
+            if(!enemy.transformed && enemy.ki > enemy.config.transformCost && dist > 5) {
+                performTransform(enemy);
+            }
+
+            // Keep enemy in bounds
+            enemy.mesh.position.x = Math.max(-45, Math.min(45, enemy.mesh.position.x));
+            enemy.mesh.position.z = Math.max(-45, Math.min(45, enemy.mesh.position.z));
+        }
+
+        function handlePlayerInput() {
+            if(!gameActive) return;
+            
+            const speed = player.config.speed;
+            const moveDir = new THREE.Vector3(0, 0, 0);
+
+            if(keys['w'] || keys['arrowup']) moveDir.z -= 1;
+            if(keys['s'] || keys['arrowdown']) moveDir.z += 1;
+            if(keys['a'] || keys['arrowleft']) moveDir.x -= 1;
+            if(keys['d'] || keys['arrowright']) moveDir.x += 1;
+
+            if(moveDir.length() > 0) {
+                moveDir.normalize();
+                player.mesh.position.add(moveDir.multiplyScalar(speed));
+                player.mesh.lookAt(
+                    player.mesh.position.x + moveDir.x, 
+                    player.mesh.position.y, 
+                    player.mesh.position.z + moveDir.z
+                );
+            }
+
+            // Bounds
+            player.mesh.position.x = Math.max(-45, Math.min(45, player.mesh.position.x));
+            player.mesh.position.z = Math.max(-45, Math.min(45, player.mesh.position.z));
+        }
+
+        function updateParticles() {
+            for(let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.position.add(p.userData.velocity);
+                p.userData.life -= 0.02;
+                p.scale.setScalar(p.userData.life);
+                
+                if(p.userData.life <= 0) {
+                    scene.remove(p);
+                    particles.splice(i, 1);
+                }
+            }
+        }
+
+        function endGame(playerWon) {
+            gameActive = false;
+            const msg = playerWon ? "¡VICTORIA!" : "DERROTA";
+            const color = playerWon ? "#4caf50" : "#f44336";
+            
+            const overlay = document.createElement('div');
+            overlay.style.position = 'absolute';
+            overlay.style.top = '0';
+            overlay.style.left = '0';
+            overlay.style.width = '100%';
+            overlay.style.height = '100%';
+            overlay.style.background = 'rgba(0,0,0,0.7)';
+            overlay.style.display = 'flex';
+            overlay.style.flexDirection = 'column';
+            overlay.style.alignItems = 'center';
+            overlay.style.justifyContent = 'center';
+            overlay.style.zIndex = '20';
+            overlay.style.pointerEvents = 'auto';
+            
+            const title = document.createElement('h1');
+            title.innerText = msg;
+            title.style.color = color;
+            title.style.fontSize = '72px';
+            title.style.textShadow = '0 0 20px white';
+            
+            const btn = document.createElement('button');
+            btn.innerText = "Jugar de Nuevo";
+            btn.className = 'btn btn-attack';
+            btn.style.fontSize = '24px';
+            btn.style.marginTop = '20px';
+            btn.onclick = () => location.reload();
+            
+            overlay.appendChild(title);
+            overlay.appendChild(btn);
+            document.body.appendChild(overlay);
+        }
+
+        // Input Handling
+        const keys = {};
+        function onKeyDown(event) {
+            keys[event.key.toLowerCase()] = true;
+            
+            if(event.code === 'Space' && gameActive) {
+                performAttack(player);
+            }
+            if(event.key.toLowerCase() === 't' && gameActive) {
+                performTransform(player);
+            }
+            if(event.key.toLowerCase() === 'r' && gameActive) {
+                rechargeKi(player);
+            }
+        }
+
+        function onKeyUp(event) {
+            keys[event.key.toLowerCase()] = false;
+        }
+        document.addEventListener('keyup', onKeyUp);
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if(gameActive) {
+                handlePlayerInput();
+                updateAI();
+                updateParticles();
+                
+                // Camera follow player smoothly
+                const targetPos = player.mesh.position.clone();
+                targetPos.y += 5;
+                targetPos.z += 8;
+                camera.position.lerp(targetPos, 0.1);
+                camera.lookAt(player.mesh.position);
+            }
+
+            // Animate Auras
+            [player, enemy].forEach(char => {
+                if(char.aura && char.transformed) {
+                    char.aura.rotation.y += 0.1;
+                    char.aura.scale.setScalar(1 + Math.sin(Date.now() * 0.005) * 0.1);
+                }
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        // Start
+        init();
+
+    </script>
+</body>
+</html>
