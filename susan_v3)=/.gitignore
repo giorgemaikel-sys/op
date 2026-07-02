@@ -1,0 +1,6 @@
+.env
+susan_memoria.db
+__pycache__/
+*.pyc
+capturas/
+modelo_es/
