@@ -1,0 +1,91 @@
+{
+    "ia": {
+        "modelo": "llama3.2:3b",
+        "modelo_codigo": "qwen2.5-coder:7b",
+        "modelo_vision": "llava:latest",
+        "modelo_profundo": "qwen2.5-coder:7b",
+        "_nota_modelo_profundo": "Cerebro profundo del Consejo. Para 16 GB usa qwen2.5-coder:7b. Si tienes 32 GB+ o GPU grande, c\u00e1mbialo a claude-3-5-sonnet-latest.",
+        "auto_detectar_modelos": true,
+        "timeout": 60,
+        "max_historial": 40,
+        "temperatura": 0.7
+    },
+    "cerebros": {
+        "activo": true,
+        "modo": "auto",
+        "max_paralelo": 4,
+        "timeout_cerebro_s": 35,
+        "cap_total_s": 75,
+        "umbral_palabras": 25,
+        "usar_critico": true,
+        "keep_alive_deep": "2m"
+    },
+    "tts": {
+        "voz": "es-MX-DaliaNeural",
+        "velocidad": "+0%",
+        "volumen": "+0%",
+        "activo": true
+    },
+    "ui": {
+        "tema": "dark",
+        "acento": "#00e5ff",
+        "acento2": "#7b2fff",
+        "ancho": 1280,
+        "alto": 780
+    },
+    "email": {
+        "tipo": "gmail",
+        "servidor_imap": "imap.gmail.com",
+        "servidor_smtp": "smtp.gmail.com",
+        "puerto_imap": 993,
+        "puerto_smtp": 587,
+        "max_correos": 10
+    },
+    "compras": {
+        "moneda_local": "USD",
+        "tiendas_defecto": [
+            "amazon",
+            "temu",
+            "ebay"
+        ],
+        "max_resultados": 8
+    },
+    "roblox": {
+        "ruta_studio": "%LOCALAPPDATA%\\Roblox\\Studio\\RobloxStudioBeta.exe",
+        "auto_insertar": true
+    },
+    "youtube": {
+        "api_key": "",
+        "max_resultados": 10
+    },
+    "github": {
+        "token": "",
+        "username": ""
+    },
+    "agentes": {
+        "vision": true,
+        "compras": true,
+        "email": true,
+        "roblox": true,
+        "viajes": true,
+        "automatizacion": true,
+        "sistema": true,
+        "whatsapp": true,
+        "youtube": true,
+        "github": true,
+        "clima": true,
+        "noticias": true,
+        "traductor": true,
+        "pantalla_ocr": true,
+        "axiom": true,
+        "creativo": true,
+        "archivos": true,
+        "conocimiento": true,
+        "vscode": true,
+        "claude": true
+    },
+    "claude": {
+        "api_key": "",
+        "modelo": "sonnet"
+    }
+}
