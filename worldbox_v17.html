@@ -1,17 +1,21 @@
+--- worldbox_v18.html (原始)
+
+
++++ worldbox_v18.html (修改后)
 <!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>WorldBox Ultra v7</title>
+<title>WorldBox Ultra v18 - GOD MODE</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 body{background:#000;overflow:hidden;font-family:'Courier New',monospace;user-select:none;}
 canvas{display:block;cursor:crosshair;}
-#ui{position:absolute;top:0;right:0;width:276px;height:100vh;background:rgba(3,6,12,.97);
+#ui{position:absolute;top:0;right:0;width:290px;height:100vh;background:rgba(3,6,12,.97);
   border-left:1px solid #0d1e2e;display:flex;flex-direction:column;overflow:hidden;}
-#ui-tabs{display:flex;border-bottom:1px solid #0d1e2e;}
-.utab{flex:1;padding:8px 2px;font-size:7.5px;letter-spacing:1px;text-align:center;cursor:pointer;
-  color:#1a3550;border:none;background:transparent;font-family:inherit;transition:.12s;border-bottom:2px solid transparent;}
+#ui-tabs{display:flex;border-bottom:1px solid #0d1e2e;flex-wrap:wrap;}
+.utab{flex:1;padding:8px 2px;font-size:7px;letter-spacing:1px;text-align:center;cursor:pointer;
+  color:#1a3550;border:none;background:transparent;font-family:inherit;transition:.12s;border-bottom:2px solid transparent;min-width:70px;}
 .utab:hover{color:#4a9eff;background:rgba(74,158,255,.04);}
 .utab.active{color:#4a9eff;border-bottom-color:#4a9eff;background:rgba(74,158,255,.07);}
 .upanel{display:none;flex:1;overflow-y:auto;padding:9px;}
@@ -23,9 +27,9 @@ canvas{display:block;cursor:crosshair;}
 .tg{display:grid;grid-template-columns:1fr 1fr;gap:3px;}
 .tg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px;}
 .tb{background:rgba(255,255,255,.018);border:1px solid #0d1e2e;color:#527a9a;
-  padding:7px 3px;border-radius:3px;cursor:pointer;font-size:8px;font-family:inherit;
+  padding:7px 3px;border-radius:3px;cursor:pointer;font-size:7.5px;font-family:inherit;
   letter-spacing:.4px;text-align:center;transition:.1s;display:flex;flex-direction:column;align-items:center;gap:2px;}
-.tb .ic{font-size:13px;}
+.tb .ic{font-size:12px;}
 .tb:hover{background:rgba(74,158,255,.06);border-color:#1a3a55;color:#8ab8d8;}
 .tb.active{background:rgba(74,158,255,.16);border-color:#4a9eff;color:#fff;box-shadow:0 0 5px rgba(74,158,255,.18);}
 .vt{display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-bottom:4px;}
@@ -45,7 +49,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:10px;heigh
 .rb.red:hover{background:rgba(239,68,68,.18);border-color:#ef4444;}
 .rb.green{border-color:#103a10;color:#4ade80;background:rgba(74,222,128,.05);}
 .rb.green:hover{background:rgba(74,222,128,.16);border-color:#22c55e;}
-#ui-footer{padding:8px 10px;border-top:1px solid #0d1e2e;font-size:7px;color:#0d1e2e;line-height:2;letter-spacing:.3px;}
+.rb.purple{border-color:#3a103a;color:#d8b4fe;background:rgba(168,85,247,.06);}
+.rb.purple:hover{background:rgba(168,85,247,.18);border-color:#a855f7;}
+#ui-footer{padding:8px 10px;border-top:1px solid #0d1e2e;font-size:6.5px;color:#0d1e2e;line-height:2;letter-spacing:.3px;}
 #stats{position:absolute;bottom:10px;left:10px;background:rgba(3,6,12,.92);border:1px solid #0d1e2e;
   padding:6px 10px;border-radius:3px;font-size:8px;color:#254e6e;line-height:1.9;letter-spacing:.3px;}
 .sv{color:#4a9eff;}
@@ -54,18 +60,18 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:10px;heigh
 #minimap-label{position:absolute;bottom:134px;left:10px;font-size:7px;color:#1a3050;letter-spacing:1px;}
 
 /* Season/weather badge */
-#season-badge{position:absolute;top:10px;right:290px;background:rgba(3,6,12,.88);border:1px solid #0d1e2e;
+#season-badge{position:absolute;top:10px;right:310px;background:rgba(3,6,12,.88);border:1px solid #0d1e2e;
   border-radius:20px;padding:4px 10px;font-size:9px;letter-spacing:.5px;pointer-events:none;}
 /* Event log */
-#evlog{position:absolute;bottom:10px;right:290px;width:220px;max-height:140px;overflow:hidden;pointer-events:none;}
+#evlog{position:absolute;bottom:10px;right:310px;width:240px;max-height:160px;overflow:hidden;pointer-events:none;}
 .evlog-row{background:rgba(3,6,12,.82);border-left:2px solid #1a3050;padding:3px 7px;font-size:7px;
   color:#4a7a9a;margin-bottom:2px;border-radius:0 3px 3px 0;animation:evfade 6s forwards;}
 @keyframes evfade{0%,65%{opacity:1}100%{opacity:0}}
 #tooltip{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);
   background:rgba(3,6,12,.96);border:1px solid #1a3a5f;padding:5px 14px;border-radius:20px;
-  font-size:8px;color:#4a9eff;letter-spacing:1px;pointer-events:none;opacity:0;transition:opacity .25s;white-space:nowrap;}
+  font-size:8px;color:#4a9eff;letter-spacing:1px;pointer-events:none;opacity:0;transition:opacity .25s;white-space:nowrap;z-index:999;}
 #tooltip.show{opacity:1;}
-#notif{position:absolute;top:10px;left:10px;max-width:255px;pointer-events:none;}
+#notif{position:absolute;top:10px;left:10px;max-width:270px;pointer-events:none;z-index:999;}
 .ni{background:rgba(3,6,12,.96);padding:5px 9px;border-radius:3px;font-size:7.5px;
   color:#90c0e0;letter-spacing:.5px;margin-bottom:3px;animation:fade 4s forwards;border-left:3px solid #4a9eff;}
 @keyframes fade{0%,60%{opacity:1}100%{opacity:0}}
@@ -90,7 +96,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:10px;heigh
 
 /* ── KING MODAL ── */
 #king-modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
-  z-index:1000;width:300px;background:rgba(2,4,10,.98);
+  z-index:1000;width:320px;background:rgba(2,4,10,.98);
   border:1px solid #1a3a6a;border-radius:6px;box-shadow:0 0 40px rgba(74,158,255,.25);
   display:none;font-family:'Courier New',monospace;}
 #king-modal.open{display:block;}
@@ -116,6 +122,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:10px;heigh
 .dojutsu-sharingan{filter:drop-shadow(0 0 6px #ff2020);}
 .dojutsu-rinnegan{filter:drop-shadow(0 0 8px #9060ff);}
 .dojutsu-byakugan{filter:drop-shadow(0 0 6px #e0e8ff);}
+
+/* NEW: Hero legendary badge */
+.hero-legendary{filter:drop-shadow(0 0 8px gold);}
 </style>
 </head>
 <body>
@@ -219,6 +228,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:10px;heigh
     <div class="st">Diplomacia Global</div>
     <button class="rb red" id="btn-wwar">⚔ GUERRA MUNDIAL</button>
     <button class="rb green" id="btn-wpeace">🕊 PAZ MUNDIAL</button>
+    <button class="rb purple" id="btn-godmode">👁 MODO DIOS IA</button>
     <div class="st">Reinos</div>
     <div id="kings-list"><span style="font-size:7.5px;color:#162840">Ningún reino aún.</span></div>
   </div>
@@ -316,13 +326,15 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:10px;heigh
 // ════════════════════════════════════════════════════════════════
 const C=document.getElementById('c');
 const ctx=C.getContext('2d',{alpha:false});
-const TS=16, WS=150, UIW=276;
+const TS=16, WS=150, UIW=290;
 const cam={x:WS*TS/2,y:WS*TS/2,zoom:1.4,tz:1.4};
 
 // Global state
 let world=[],entities=[],settlements=[],armies=[],projectiles=[],fires=[],tornadoes=[],parts=[];
 let tool='human',spawnCount=5,simSpeed=1,totalKills=0,tick=0,mode3D=false;
 let fc=0,fps=0,lastT=performance.now(),drag={on:false,sx:0,sy:0,cx:0,cy:0},keys={};
+// GOD MODE AI - Auto simulation system
+let godMode=false,godModeTimer=0;
 
 // ── Day / Night (24000 ticks = 1 full day) ───────────────────
 // (Day/Night removed)
@@ -3877,6 +3889,51 @@ function loop(now){
   if(keys['KeyA']||keys['ArrowLeft'])cam.x-=cs;if(keys['KeyD']||keys['ArrowRight'])cam.x+=cs;
   cam.x=Math.max(TS*2,Math.min(WS*TS-TS*2,cam.x));cam.y=Math.max(TS*2,Math.min(WS*TS-TS*2,cam.y));
 
+  // ── GOD MODE AI SYSTEM ───────────────────────────────────────
+  if(godMode&&tick%120===0){
+    godModeTimer++;
+    // Auto spawn civilizations
+    if(godModeTimer%8===0){
+      const races=['human','orc','elf','dwarf'];
+      const rx=Math.random()*(WS-20)*TS+10*TS,ry=Math.random()*(WS-20)*TS+10*TS;
+      const tx=Math.floor(rx/TS),ty=Math.floor(ry/TS);
+      if(world[ty]?.[tx]?.type.walk){
+        tool=races[Math.floor(Math.random()*races.length)];
+        for(let i=0;i<3;i++)entities.push(new Entity(tool,rx+(Math.random()-.5)*40,ry+(Math.random()-.5)*40));
+        logEvent(`🌍 IA: Civilización ${tool} aparece`,'#4a9eff');
+      }
+    }
+    // Auto bless settlements
+    if(godModeTimer%15===0&&settlements.length>0){
+      const s=settlements.filter(x=>x.alive)[Math.floor(Math.random()*settlements.filter(x=>x.alive).length)];
+      if(s){
+        SG.query(s.cx*TS,s.cy*TS,60).forEach(e=>{if(CIV.has(e.type)){e.blessed=12000;e.hp=Math.min(e.maxHp,e.hp+50);}});
+        spawnP(s.cx*TS,s.cy*TS,'#ffe070',10);
+        logEvent(`✨ IA: Bendición en ${s.name}`,'#ffd700');
+      }
+    }
+    // Auto spawn creatures
+    if(godModeTimer%20===0){
+      const cx=Math.random()*(WS-10)*TS+5*TS,cy=Math.random()*(WS-10)*TS+5*TS;
+      const cr=['wolf','bear','dragon','demon'][Math.floor(Math.random()*4)];
+      entities.push(new Entity(cr,cx,cy));
+      logEvent(`🐾 IA: ${cr} invocado`,'#a855f7');
+    }
+    // Auto heal wounded
+    if(godModeTimer%10===0){
+      entities.filter(e=>e.hp<e.maxHp*.4&&CIV.has(e.type)).slice(0,5).forEach(e=>{
+        e.hp=Math.min(e.maxHp,e.hp+e.maxHp*.3);
+        spawnP(e.x,e.y,'#50f050',3);
+      });
+    }
+    // Random divine events
+    if(godModeTimer%30===0&&Math.random()<.4){
+      const ev=['lightning','meteor','rain','blessing'][Math.floor(Math.random()*4)];
+      const ex=Math.random()*(WS-20)*TS+10*TS,ey=Math.random()*(WS-20)*TS+10*TS;
+      const oldTool=tool;tool=ev;applyPower(ex,ey);tool=oldTool;
+    }
+  }
+
   // ── Seasons ──────────────────────────────────────────────────
   seasonTick+=dt;
   const newSeason=Math.floor(seasonTick/180000)%4;
@@ -4107,6 +4164,13 @@ document.getElementById('btn-wpeace').addEventListener('click',()=>{
   const a=settlements.filter(s=>s.alive);
   for(let i=0;i<a.length;i++) for(let j=i+1;j<a.length;j++){setDipl(a[i],a[j],0);}
   armies.forEach(x=>x.disband());notify('🕊 ¡PAZ MUNDIAL!','elf');rebuildKingdomPanel();
+});
+// GOD MODE toggle
+document.getElementById('btn-godmode').addEventListener('click',()=>{
+  godMode=!godMode;godModeTimer=0;
+  const btn=document.getElementById('btn-godmode');
+  if(godMode){btn.style.background='rgba(168,85,247,.25)';btn.style.borderColor='#a855f7';btn.textContent='👁 IA: ACTIVO';logEvent('👁 MODO DIOS IA ACTIVADO - El mundo cobra vida','#a855f7');}
+  else{btn.style.background='';btn.style.borderColor='';btn.textContent='👁 MODO DIOS IA';logEvent('👁 MODO DIOS IA DESACTIVADO','#666');}
 });
 
 // ════════════════════════════════════════════════════════════════
