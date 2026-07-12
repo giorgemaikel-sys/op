@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Plantas vs Zombis: Fusión 3D</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { width:100%; height:100%; overflow:hidden; background:#111; font-family:'Trebuchet MS','Segoe UI',sans-serif; overscroll-behavior:none; }
+  #gl { position:absolute; inset:0; width:100%; height:100%; display:block; cursor:crosshair; touch-action:none; }
+
+  /* ---------- HUD ---------- */
+  #hud { position:absolute; top:0; left:0; right:0; display:flex; align-items:flex-start; gap:10px; padding:10px 12px; pointer-events:none; user-select:none; }
+  #sunBox {
+    pointer-events:auto; background:linear-gradient(#7a5b2e,#5d431f); border:3px solid #3d2c13; border-radius:12px;
+    padding:8px 14px; text-align:center; color:#fff; box-shadow:0 4px 10px rgba(0,0,0,.4); min-width:86px;
+  }
+  #sunBox .icon { font-size:26px; line-height:1; text-shadow:0 0 8px #ffdd55; }
+  #sunCount { font-size:20px; font-weight:bold; color:#ffe98a; text-shadow:0 1px 2px #000; }
+  #seedBar { pointer-events:auto; display:flex; gap:6px; background:linear-gradient(#7a5b2e,#5d431f); border:3px solid #3d2c13; border-radius:12px; padding:7px; box-shadow:0 4px 10px rgba(0,0,0,.4); flex-wrap:wrap; }
+  .seed {
+    position:relative; width:64px; height:78px; border-radius:8px; border:2px solid #2c1f0d; overflow:hidden;
+    background:linear-gradient(#d8cfa8,#b6a877); cursor:pointer; text-align:center; transition:transform .08s;
+  }
+  .seed:hover { transform:translateY(-2px); }
+  .seed .icon { font-size:30px; margin-top:6px; display:block; filter:drop-shadow(0 2px 2px rgba(0,0,0,.35)); }
+  .seed .cost { position:absolute; bottom:0; left:0; right:0; background:rgba(30,20,5,.75); color:#ffe98a; font-size:13px; font-weight:bold; padding:1px 0; }
+  .seed .cd { position:absolute; left:0; right:0; top:0; background:rgba(20,20,25,.72); height:0%; pointer-events:none; }
+  .seed.sel { outline:3px solid #ffe14d; outline-offset:-1px; box-shadow:0 0 14px #ffe14d; }
+  .seed.off { filter:grayscale(.8) brightness(.75); cursor:not-allowed; }
+  .seed .nm { position:absolute; top:40px; left:0; right:0; font-size:9px; color:#33260e; font-weight:bold; line-height:1.05; padding:0 2px; }
+  #shovel { width:56px; height:78px; }
+  #shovel .icon { font-size:32px; margin-top:14px; }
+
+  #waveWrap { pointer-events:none; margin-left:auto; background:rgba(30,20,5,.7); border:2px solid #3d2c13; border-radius:10px; padding:7px 10px; color:#fff; min-width:190px; }
+  #waveWrap .lbl { font-size:11px; letter-spacing:1px; color:#ffd9d9; text-align:center; margin-bottom:4px; }
+  #waveBar { height:12px; background:#2b1d0c; border-radius:6px; overflow:hidden; border:1px solid #000; }
+  #waveFill { height:100%; width:0%; background:linear-gradient(90deg,#7bd44a,#e8483a); transition:width .4s; }
+
+  #msg {
+    position:absolute; top:34%; left:50%; transform:translate(-50%,-50%) scale(.8); color:#ff4d3d; font-size:44px; font-weight:900;
+    text-shadow:0 0 12px #000, 0 3px 0 #5c0000; opacity:0; transition:all .35s; pointer-events:none; text-align:center; white-space:nowrap;
+  }
+  #msg.show { opacity:1; transform:translate(-50%,-50%) scale(1); }
+  #hint { position:absolute; bottom:12px; left:50%; transform:translateX(-50%); color:#fff; background:rgba(0,0,0,.5); border-radius:8px; padding:5px 14px; font-size:13px; pointer-events:none; opacity:.9; }
+
+  /* ---------- Overlays ---------- */
+  .overlay {
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background:rgba(8,14,6,.82); color:#fff; text-align:center; z-index:10; padding:20px;
+  }
+  .overlay h1 { font-size:clamp(28px,6vw,58px); color:#8ee04e; text-shadow:0 4px 0 #234d10, 0 0 24px #4a9c1f; margin-bottom:6px; }
+  .overlay h1 .z { color:#c94f43; text-shadow:0 4px 0 #571812, 0 0 24px #a33328; }
+  .overlay h2 { font-size:20px; color:#ffe98a; margin-bottom:16px; font-weight:normal; }
+  .panel { background:rgba(40,28,10,.9); border:3px solid #6b4d22; border-radius:14px; padding:14px 22px; max-width:680px; margin-bottom:18px; max-height:46vh; overflow:auto; }
+  .panel p { font-size:14px; line-height:1.5; margin:5px 0; color:#eee; }
+  .panel b { color:#ffe14d; }
+  .fusetbl { display:grid; grid-template-columns:1fr 1fr; gap:3px 18px; text-align:left; font-size:13px; margin-top:6px; }
+  .fusetbl span { color:#cfe9b8; }
+  .fusetbl span b { color:#8ee04e; }
+  .bigbtn {
+    font-size:26px; font-weight:bold; padding:12px 46px; border-radius:14px; border:3px solid #2c5c12; cursor:pointer;
+    background:linear-gradient(#9ce75d,#5da829); color:#1b3a08; box-shadow:0 6px 0 #2c5c12, 0 10px 18px rgba(0,0,0,.5); transition:transform .08s;
+  }
+  .bigbtn:hover { transform:translateY(-2px); }
+  .bigbtn:active { transform:translateY(3px); box-shadow:0 2px 0 #2c5c12; }
+  #endOverlay h1.lose { color:#c94f43; text-shadow:0 4px 0 #571812; }
+  .hidden { display:none !important; }
+
+  /* ---------- Móvil / pantallas pequeñas ---------- */
+  @media (max-width:820px), (max-height:540px) {
+    #hud { flex-wrap:wrap; gap:5px; padding:max(5px,env(safe-area-inset-top)) 6px 0 max(6px,env(safe-area-inset-left)); }
+    #sunBox { min-width:54px; padding:4px 8px; border-width:2px; border-radius:9px; }
+    #sunBox .icon { font-size:17px; }
+    #sunCount { font-size:14px; }
+    #seedBar { padding:4px; gap:4px; border-width:2px; border-radius:9px; flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; max-width:calc(100vw - 78px); }
+    .seed { width:46px; height:56px; flex:0 0 auto; border-radius:6px; }
+    .seed .icon { font-size:22px; margin-top:4px; }
+    .seed .nm { display:none; }
+    .seed .cost { font-size:10px; }
+    .seed.sel { outline-width:2px; }
+    #shovel { width:42px; height:56px; }
+    #shovel .icon { font-size:22px; margin-top:6px; }
+    #waveWrap { order:3; flex:1 1 100%; margin-left:0; min-width:0; padding:3px 8px; }
+    #waveWrap .lbl { font-size:9px; margin-bottom:2px; }
+    #waveBar { height:8px; }
+    #msg { font-size:clamp(20px,7vw,34px); white-space:normal; width:92vw; }
+    #hint { font-size:11px; bottom:max(8px,env(safe-area-inset-bottom)); max-width:92vw; text-align:center; padding:4px 10px; }
+    .overlay { padding:12px; }
+    .overlay h2 { font-size:14px; margin-bottom:10px; }
+    .panel { padding:10px 12px; max-height:44vh; max-width:94vw; margin-bottom:12px; }
+    .panel p { font-size:12px; }
+    .fusetbl { grid-template-columns:1fr; font-size:12px; gap:2px; }
+    .bigbtn { font-size:20px; padding:10px 34px; }
+  }
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+
+<div id="hud" class="hidden">
+  <div id="sunBox"><div class="icon">☀️</div><div id="sunCount">150</div></div>
+  <div id="seedBar"></div>
+  <div id="waveWrap"><div class="lbl">AVANCE DE LA HORDA</div><div id="waveBar"><div id="waveFill"></div></div></div>
+</div>
+<div id="msg"></div>
+<div id="hint" class="hidden"></div>
+
+<div id="menuOverlay" class="overlay">
+  <h1>PLANTAS <span style="color:#ffe14d">vs</span> <span class="z">ZOMBIS</span></h1>
+  <h2>⚡ FUSIÓN 3D ⚡ &nbsp;·&nbsp; WebGL puro, sin motores ni librerías</h2>
+  <div class="panel">
+    <p><b>Cómo jugar:</b> elige una semilla y haz clic en el césped para plantar. Recoge el <b>sol ☀️</b> que cae del cielo (haz clic sobre él) para pagar más plantas. La <b>pala</b> quita plantas. ¡No dejes que los zombis crucen tu jardín!</p>
+    <p><b>🧬 FUSIÓN:</b> planta una semilla <b>encima</b> de otra planta compatible para fusionarlas en un híbrido más poderoso:</p>
+    <div class="fusetbl">
+      <span>🟢+🟢 → <b>Repetidora</b> (doble tiro)</span>
+      <span>🌻+🟢 → <b>Girasol Guisante</b></span>
+      <span>🥜+🟢 → <b>Nuez Cañón</b></span>
+      <span>❄️+Repetidora → <b>Rep. Gélida</b></span>
+      <span>🌻+🌻 → <b>Girasol Gemelo</b></span>
+      <span>🥜+🥜 → <b>Nuez Blindada</b></span>
+      <span>🍒+🥜 → <b>Nuez Explosiva</b></span>
+      <span>❄️+🍈 → <b>Melón Invernal</b></span>
+    </div>
+  </div>
+  <button class="bigbtn" id="playBtn">▶ ¡JUGAR!</button>
+</div>
+
+<div id="endOverlay" class="overlay hidden">
+  <h1 id="endTitle">¡VICTORIA!</h1>
+  <h2 id="endSub"></h2>
+  <button class="bigbtn" id="againBtn">↻ JUGAR OTRA VEZ</button>
+</div>
+
+<script>
+'use strict';
+/* ============================================================
+   PLANTAS vs ZOMBIS: FUSIÓN 3D
+   Un solo archivo. WebGL escrito a mano: sin motores, sin librerías.
+   ============================================================ */
+
+/* ---------------- Matemática 4x4 (column-major) ---------------- */
+function m4ident(){ return [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]; }
+function m4mul(a,b){
+  const o=new Array(16);
+  for(let c=0;c<4;c++)for(let r=0;r<4;r++){
+    o[c*4+r]=a[r]*b[c*4]+a[4+r]*b[c*4+1]+a[8+r]*b[c*4+2]+a[12+r]*b[c*4+3];
+  }
+  return o;
+}
+function m4persp(fov,aspect,n,f){
+  const t=1/Math.tan(fov/2), nf=1/(n-f);
+  return [t/aspect,0,0,0, 0,t,0,0, 0,0,(f+n)*nf,-1, 0,0,2*f*n*nf,0];
+}
+function v3sub(a,b){return [a[0]-b[0],a[1]-b[1],a[2]-b[2]];}
+function v3cross(a,b){return [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];}
+function v3dot(a,b){return a[0]*b[0]+a[1]*b[1]+a[2]*b[2];}
+function v3norm(a){const l=Math.hypot(a[0],a[1],a[2])||1;return [a[0]/l,a[1]/l,a[2]/l];}
+function m4lookAt(eye,c,up){
+  const z=v3norm(v3sub(eye,c)), x=v3norm(v3cross(up,z)), y=v3cross(z,x);
+  return [x[0],y[0],z[0],0, x[1],y[1],z[1],0, x[2],y[2],z[2],0,
+          -v3dot(x,eye),-v3dot(y,eye),-v3dot(z,eye),1];
+}
+function m4T(m,x,y,z){ return m4mul(m,[1,0,0,0, 0,1,0,0, 0,0,1,0, x,y,z,1]); }
+function m4S(m,x,y,z){ return m4mul(m,[x,0,0,0, 0,y,0,0, 0,0,z,0, 0,0,0,1]); }
+function m4RX(m,a){const c=Math.cos(a),s=Math.sin(a);return m4mul(m,[1,0,0,0, 0,c,s,0, 0,-s,c,0, 0,0,0,1]);}
+function m4RY(m,a){const c=Math.cos(a),s=Math.sin(a);return m4mul(m,[c,0,-s,0, 0,1,0,0, s,0,c,0, 0,0,0,1]);}
+function m4RZ(m,a){const c=Math.cos(a),s=Math.sin(a);return m4mul(m,[c,s,0,0, -s,c,0,0, 0,0,1,0, 0,0,0,1]);}
+function m4mulVec(m,v){
+  const o=new Array(4);
+  for(let r=0;r<4;r++) o[r]=m[r]*v[0]+m[4+r]*v[1]+m[8+r]*v[2]+m[12+r]*v[3];
+  return o;
+}
+function m4invert(m){
+  const a=m, o=new Array(16);
+  const a00=a[0],a01=a[1],a02=a[2],a03=a[3], a10=a[4],a11=a[5],a12=a[6],a13=a[7];
+  const a20=a[8],a21=a[9],a22=a[10],a23=a[11], a30=a[12],a31=a[13],a32=a[14],a33=a[15];
+  const b00=a00*a11-a01*a10, b01=a00*a12-a02*a10, b02=a00*a13-a03*a10;
+  const b03=a01*a12-a02*a11, b04=a01*a13-a03*a11, b05=a02*a13-a03*a12;
+  const b06=a20*a31-a21*a30, b07=a20*a32-a22*a30, b08=a20*a33-a23*a30;
+  const b09=a21*a32-a22*a31, b10=a21*a33-a23*a31, b11=a22*a33-a23*a32;
+  let det=b00*b11-b01*b10+b02*b09+b03*b08-b04*b07+b05*b06;
+  if(!det) return m4ident();
+  det=1/det;
+  o[0]=(a11*b11-a12*b10+a13*b09)*det;  o[1]=(a02*b10-a01*b11-a03*b09)*det;
+  o[2]=(a31*b05-a32*b04+a33*b03)*det;  o[3]=(a22*b04-a21*b05-a23*b03)*det;
+  o[4]=(a12*b08-a10*b11-a13*b07)*det;  o[5]=(a00*b11-a02*b08+a03*b07)*det;
+  o[6]=(a32*b02-a30*b05-a33*b01)*det;  o[7]=(a20*b05-a22*b02+a23*b01)*det;
+  o[8]=(a10*b10-a11*b08+a13*b06)*det;  o[9]=(a01*b08-a00*b10-a03*b06)*det;
+  o[10]=(a30*b04-a31*b02+a33*b00)*det; o[11]=(a21*b02-a20*b04-a23*b00)*det;
+  o[12]=(a11*b07-a10*b09-a12*b06)*det; o[13]=(a00*b09-a01*b07+a02*b06)*det;
+  o[14]=(a31*b01-a30*b03-a32*b00)*det; o[15]=(a20*b03-a21*b01+a22*b00)*det;
+  return o;
+}
+
+/* ---------------- WebGL ---------------- */
+const canvas=document.getElementById('gl');
+const gl=canvas.getContext('webgl',{antialias:true});
+if(!gl){ document.body.innerHTML='<p style="color:#fff;padding:30px">Tu navegador no soporta WebGL.</p>'; throw new Error('no webgl'); }
+
+const VS=`
+attribute vec3 aPos; attribute vec3 aNor;
+uniform mat4 uProj,uView,uModel;
+varying vec3 vNor; varying vec3 vWorld;
+void main(){
+  vec4 w=uModel*vec4(aPos,1.0);
+  vWorld=w.xyz; vNor=mat3(uModel)*aNor;
+  gl_Position=uProj*uView*w;
+}`;
+const FS=`
+precision mediump float;
+varying vec3 vNor; varying vec3 vWorld;
+uniform vec3 uColor; uniform float uEmis; uniform float uAlpha;
+void main(){
+  vec3 N=normalize(vNor);
+  vec3 L=normalize(vec3(0.45,1.0,0.55));
+  float d=max(dot(N,L),0.0);
+  float back=max(dot(N,normalize(vec3(-0.4,0.3,-0.6))),0.0)*0.18;
+  vec3 col=uColor*(0.42+0.62*d+back);
+  col=mix(col,uColor*1.25,uEmis);
+  gl_FragColor=vec4(col,uAlpha);
+}`;
+function makeShader(type,src){
+  const s=gl.createShader(type); gl.shaderSource(s,src); gl.compileShader(s);
+  if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
+  return s;
+}
+const prog=gl.createProgram();
+gl.attachShader(prog,makeShader(gl.VERTEX_SHADER,VS));
+gl.attachShader(prog,makeShader(gl.FRAGMENT_SHADER,FS));
+gl.linkProgram(prog);
+if(!gl.getProgramParameter(prog,gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));
+gl.useProgram(prog);
+const loc={
+  aPos:gl.getAttribLocation(prog,'aPos'), aNor:gl.getAttribLocation(prog,'aNor'),
+  uProj:gl.getUniformLocation(prog,'uProj'), uView:gl.getUniformLocation(prog,'uView'),
+  uModel:gl.getUniformLocation(prog,'uModel'), uColor:gl.getUniformLocation(prog,'uColor'),
+  uEmis:gl.getUniformLocation(prog,'uEmis'), uAlpha:gl.getUniformLocation(prog,'uAlpha'),
+};
+gl.enableVertexAttribArray(loc.aPos);
+gl.enableVertexAttribArray(loc.aNor);
+gl.enable(gl.DEPTH_TEST);
+gl.enable(gl.CULL_FACE);
+
+/* ---------------- Geometría procedural ---------------- */
+function buildMesh(data){
+  const buf=gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER,buf);
+  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(data),gl.STATIC_DRAW);
+  return {buf,count:data.length/6};
+}
+function boxGeo(){
+  const d=[], C=0.5;
+  const faces=[
+    {n:[0,0,1], v:[[-C,-C,C],[C,-C,C],[C,C,C],[-C,C,C]]},
+    {n:[0,0,-1],v:[[C,-C,-C],[-C,-C,-C],[-C,C,-C],[C,C,-C]]},
+    {n:[1,0,0], v:[[C,-C,C],[C,-C,-C],[C,C,-C],[C,C,C]]},
+    {n:[-1,0,0],v:[[-C,-C,-C],[-C,-C,C],[-C,C,C],[-C,C,-C]]},
+    {n:[0,1,0], v:[[-C,C,C],[C,C,C],[C,C,-C],[-C,C,-C]]},
+    {n:[0,-1,0],v:[[-C,-C,-C],[C,-C,-C],[C,-C,C],[-C,-C,C]]},
+  ];
+  for(const f of faces){
+    const [a,b,c,e]=f.v, n=f.n;
+    for(const v of [a,b,c, a,c,e]) d.push(v[0],v[1],v[2],n[0],n[1],n[2]);
+  }
+  return buildMesh(d);
+}
+function cylGeo(seg){
+  const d=[], R=0.5, H=0.5;
+  for(let i=0;i<seg;i++){
+    const a0=i/seg*Math.PI*2, a1=(i+1)/seg*Math.PI*2;
+    const c0=Math.cos(a0),s0=Math.sin(a0), c1=Math.cos(a1),s1=Math.sin(a1);
+    // lateral
+    d.push(R*c0,-H,R*s0, c0,0,s0,  R*c1,-H,R*s1, c1,0,s1,  R*c1,H,R*s1, c1,0,s1);
+    d.push(R*c0,-H,R*s0, c0,0,s0,  R*c1,H,R*s1,  c1,0,s1,  R*c0,H,R*s0, c0,0,s0);
+    // tapas
+    d.push(0,H,0, 0,1,0,  R*c0,H,R*s0, 0,1,0,  R*c1,H,R*s1, 0,1,0);
+    d.push(0,-H,0, 0,-1,0,  R*c1,-H,R*s1, 0,-1,0,  R*c0,-H,R*s0, 0,-1,0);
+  }
+  return buildMesh(d);
+}
+function sphGeo(st,sl){
+  const d=[], R=0.5;
+  const P=(i,j)=>{
+    const ph=i/st*Math.PI, th=j/sl*Math.PI*2;
+    return [R*Math.sin(ph)*Math.cos(th), R*Math.cos(ph), R*Math.sin(ph)*Math.sin(th)];
+  };
+  for(let i=0;i<st;i++)for(let j=0;j<sl;j++){
+    const a=P(i,j),b=P(i+1,j),c=P(i+1,j+1),e=P(i,j+1);
+    for(const v of [a,c,b, a,e,c]) d.push(v[0],v[1],v[2], v[0]*2,v[1]*2,v[2]*2);
+  }
+  return buildMesh(d);
+}
+function coneGeo(seg){
+  const d=[], R=0.5, H=0.5;
+  for(let i=0;i<seg;i++){
+    const a0=i/seg*Math.PI*2, a1=(i+1)/seg*Math.PI*2;
+    const am=(a0+a1)/2;
+    const c0=Math.cos(a0),s0=Math.sin(a0), c1=Math.cos(a1),s1=Math.sin(a1);
+    const n=v3norm([Math.cos(am),0.5,Math.sin(am)]);
+    d.push(0,H,0, n[0],n[1],n[2],  R*c0,-H,R*s0, c0,0.5,s0,  R*c1,-H,R*s1, c1,0.5,s1);
+    d.push(0,-H,0, 0,-1,0,  R*c1,-H,R*s1, 0,-1,0,  R*c0,-H,R*s0, 0,-1,0);
+  }
+  return buildMesh(d);
+}
+const BOX=boxGeo(), CYL=cylGeo(14), SPH=sphGeo(9,14), CONE=coneGeo(12);
+
+let curAlpha=1;
+function draw(mesh,color,model,emis){
+  gl.bindBuffer(gl.ARRAY_BUFFER,mesh.buf);
+  gl.vertexAttribPointer(loc.aPos,3,gl.FLOAT,false,24,0);
+  gl.vertexAttribPointer(loc.aNor,3,gl.FLOAT,false,24,12);
+  gl.uniformMatrix4fv(loc.uModel,false,model);
+  gl.uniform3fv(loc.uColor,color);
+  gl.uniform1f(loc.uEmis,emis||0);
+  gl.uniform1f(loc.uAlpha,curAlpha);
+  gl.drawArrays(gl.TRIANGLES,0,mesh.count);
+}
+function mixC(a,b,t){ return [a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t, a[2]+(b[2]-a[2])*t]; }
+
+/* ---------------- Cámara / picking ---------------- */
+let W=0,H=0, proj=m4ident(), view=m4ident(), projView=m4ident(), invPV=m4ident();
+const EYE=[0,8.4,9.2], TARGET=[0.3,0,-0.35];
+let camFit=1;
+function resize(){
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  W=canvas.clientWidth; H=canvas.clientHeight;
+  canvas.width=W*dpr; canvas.height=H*dpr;
+  gl.viewport(0,0,canvas.width,canvas.height);
+  const aspect=W/H;
+  const fovY=(aspect<1?54:42)*Math.PI/180;
+  proj=m4persp(fovY, aspect, 0.1, 160);
+  // En pantallas estrechas (celular en vertical) la cámara se aleja
+  // lo justo para que quepa todo el ancho del jardín (~14.4 unidades).
+  const needHalfW=7.2;
+  const halfTan=Math.tan(fovY/2)*aspect;
+  const baseDist=Math.hypot(EYE[0]-TARGET[0],EYE[1]-TARGET[1],EYE[2]-TARGET[2]);
+  camFit=Math.max(1, needHalfW/halfTan/baseDist);
+}
+window.addEventListener('resize',resize);
+window.addEventListener('orientationchange',()=>setTimeout(resize,120));
+function updateCam(t){
+  const e=[EYE[0]+Math.sin(t*0.3)*0.06, EYE[1], EYE[2]+Math.cos(t*0.23)*0.05];
+  const ef=[TARGET[0]+(e[0]-TARGET[0])*camFit,
+            TARGET[1]+(e[1]-TARGET[1])*camFit,
+            TARGET[2]+(e[2]-TARGET[2])*camFit];
+  view=m4lookAt(ef,TARGET,[0,1,0]);
+  projView=m4mul(proj,view);
+  invPV=m4invert(projView);
+}
+function screenRayToGround(px,py){
+  const nx=px/W*2-1, ny=1-py/H*2;
+  const p0=m4mulVec(invPV,[nx,ny,-1,1]), p1=m4mulVec(invPV,[nx,ny,1,1]);
+  const a=[p0[0]/p0[3],p0[1]/p0[3],p0[2]/p0[3]], b=[p1[0]/p1[3],p1[1]/p1[3],p1[2]/p1[3]];
+  const dir=v3sub(b,a);
+  if(Math.abs(dir[1])<1e-6) return null;
+  const t=-a[1]/dir[1];
+  if(t<0) return null;
+  return [a[0]+dir[0]*t, 0, a[2]+dir[2]*t];
+}
+function projectToScreen(p){
+  const v=m4mulVec(projView,[p[0],p[1],p[2],1]);
+  if(v[3]<=0) return null;
+  return [(v[0]/v[3]*0.5+0.5)*W, (1-(v[1]/v[3]*0.5+0.5))*H];
+}
+function worldToCell(w){
+  const col=Math.round(w[0]+4), row=Math.round(w[2]+2);
+  if(col<0||col>8||row<0||row>4) return null;
+  return {row,col};
+}
+const cellX=c=>c-4, cellZ=r=>r-2;
+
+/* ---------------- Audio sintetizado ---------------- */
+let actx=null;
+function initAudio(){ if(!actx){ try{ actx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } }
+function tone(f0,f1,dur,type,vol,delay){
+  if(!actx) return;
+  const t0=actx.currentTime+(delay||0);
+  const o=actx.createOscillator(), g=actx.createGain();
+  o.type=type; o.frequency.setValueAtTime(f0,t0);
+  o.frequency.exponentialRampToValueAtTime(Math.max(f1,1),t0+dur);
+  g.gain.setValueAtTime(vol,t0);
+  g.gain.exponentialRampToValueAtTime(0.001,t0+dur);
+  o.connect(g); g.connect(actx.destination);
+  o.start(t0); o.stop(t0+dur+0.02);
+}
+function noise(dur,vol){
+  if(!actx) return;
+  const n=actx.sampleRate*dur, b=actx.createBuffer(1,n,actx.sampleRate), ch=b.getChannelData(0);
+  for(let i=0;i<n;i++) ch[i]=(Math.random()*2-1)*(1-i/n);
+  const s=actx.createBufferSource(), g=actx.createGain();
+  s.buffer=b; g.gain.value=vol; s.connect(g); g.connect(actx.destination); s.start();
+}
+const SFX={
+  plant(){ tone(220,90,0.12,'square',0.15); noise(0.08,0.1); },
+  shoot(){ tone(700,300,0.08,'square',0.08); },
+  hit(){ tone(150,60,0.07,'sawtooth',0.1); },
+  sun(){ tone(660,990,0.14,'sine',0.2); tone(990,1320,0.12,'sine',0.12,0.06); },
+  fuse(){ tone(330,880,0.25,'triangle',0.25); tone(440,1200,0.3,'sine',0.15,0.08); },
+  boom(){ noise(0.5,0.5); tone(120,30,0.4,'sawtooth',0.35); },
+  bite(){ tone(90,50,0.1,'sawtooth',0.12); },
+  shovel(){ noise(0.12,0.2); tone(200,400,0.1,'triangle',0.15); },
+  mower(){ tone(80,220,0.8,'sawtooth',0.25); noise(0.5,0.2); },
+  wave(){ tone(110,55,0.7,'sawtooth',0.3); tone(165,82,0.7,'sawtooth',0.2,0.1); },
+  lose(){ tone(300,60,1.4,'sawtooth',0.35); },
+  win(){ [523,659,784,1047].forEach((f,i)=>tone(f,f,0.28,'triangle',0.25,i*0.16)); },
+  freeze(){ tone(1200,400,0.15,'sine',0.1); },
+};
+
+/* ---------------- Datos del juego ---------------- */
+const PLANTS={
+  girasol:        {name:'Girasol',          cost:25,  hp:120,  cdMax:5,  sunEvery:9,  icon:'🌻'},
+  guisante:       {name:'Lanzaguisantes',   cost:100, hp:120,  cdMax:5,  fireEvery:1.4, dmg:20, shots:1, icon:'🟢'},
+  nuez:           {name:'Nuez',             cost:50,  hp:900,  cdMax:18, icon:'🥜'},
+  hielo:          {name:'G. de Hielo',      cost:175, hp:120,  cdMax:7,  fireEvery:1.5, dmg:20, shots:1, slow:true, icon:'❄️'},
+  cereza:         {name:'Petacereza',       cost:150, hp:120,  cdMax:24, bomb:true, icon:'🍒'},
+  melon:          {name:'Melonpulta',       cost:200, hp:120,  cdMax:12, fireEvery:2.7, dmg:48, lob:true, icon:'🍈'},
+  /* Híbridos (solo por fusión) */
+  repetidora:     {name:'Repetidora',       hp:180,  fireEvery:1.4, dmg:20, shots:2, hybrid:true},
+  girasolguisante:{name:'Girasol Guisante', hp:160,  sunEvery:9, fireEvery:1.6, dmg:20, shots:1, hybrid:true},
+  nuezcanon:      {name:'Nuez Cañón',       hp:900,  fireEvery:1.8, dmg:20, shots:1, hybrid:true},
+  repgelida:      {name:'Repetidora Gélida',hp:180,  fireEvery:1.4, dmg:20, shots:2, slow:true, hybrid:true},
+  girasolgemelo:  {name:'Girasol Gemelo',   hp:180,  sunEvery:8.5, sunDouble:true, hybrid:true},
+  nuezblindada:   {name:'Nuez Blindada',    hp:2600, hybrid:true},
+  nuezexplosiva:  {name:'Nuez Explosiva',   hp:900,  deathBomb:true, hybrid:true},
+  meloninvernal:  {name:'Melón Invernal',   hp:160,  fireEvery:2.7, dmg:48, lob:true, slow:true, hybrid:true},
+};
+const SEED_ORDER=['girasol','guisante','nuez','hielo','cereza','melon'];
+const FUSIONS={};
+function addFusion(a,b,out){ FUSIONS[[a,b].sort().join('+')]=out; }
+addFusion('guisante','guisante','repetidora');
+addFusion('girasol','guisante','girasolguisante');
+addFusion('guisante','nuez','nuezcanon');
+addFusion('hielo','repetidora','repgelida');
+addFusion('girasol','girasol','girasolgemelo');
+addFusion('nuez','nuez','nuezblindada');
+addFusion('cereza','nuez','nuezexplosiva');
+addFusion('hielo','melon','meloninvernal');
+
+const ZTYPES={
+  normal:  {hp:210, speed:0.28},
+  cono:    {hp:470, speed:0.28},
+  corredor:{hp:170, speed:0.62},
+  cubo:    {hp:950, speed:0.24},
+};
+
+function buildTimeline(){
+  const ev=[]; const R=()=>Math.floor(Math.random()*5);
+  const wave=(t0,list,gap)=>{ list.forEach((z,i)=>ev.push({t:t0+i*gap+Math.random()*1.5, spawn:z, row:R()})); };
+  ev.push({t:10, msg:'¡LOS ZOMBIS SE ACERCAN!'});
+  wave(14, ['normal','normal','normal'], 7);
+  ev.push({t:48, msg:'¡Oleada 2!'});
+  wave(52, ['normal','cono','normal','normal','cono'], 5.5);
+  ev.push({t:92, msg:'¡Oleada 3!'});
+  wave(96, ['normal','corredor','cono','normal','corredor','cono','normal'], 4.5);
+  ev.push({t:138, msg:'¡Oleada 4: llegan los cubos!'});
+  wave(142, ['cubo','normal','cono','corredor','normal','cubo','cono','corredor','normal'], 4);
+  ev.push({t:188, msg:'☠ ¡OLEADA FINAL ENORME! ☠'});
+  wave(192, ['cubo','cono','normal','corredor','cubo','cono','normal','normal','corredor','cono','cubo','normal','corredor','cono'], 2.2);
+  ev.sort((a,b)=>a.t-b.t);
+  return ev;
+}
+
+/* ---------------- Estado ---------------- */
+let S=null;
+function newState(){
+  const tl=buildTimeline();
+  return {
+    phase:'menu', t:0, sun:150,
+    plants:[], zombies:[], shots:[], suns:[], parts:[], mowers:[],
+    timeline:tl, evIdx:0, totalZ:tl.filter(e=>e.spawn).length, spawnedZ:0,
+    selected:null, shovel:false, hover:null,
+    skySun:6, cds:{}, msgT:0, endT:0, kills:0,
+  };
+}
+S=newState();
+for(let r=0;r<5;r++) S.mowers.push({row:r,x:-5.1,active:false,gone:false});
+SEED_ORDER.forEach(id=>S.cds[id]=0);
+
+/* ---------------- HUD ---------------- */
+const $=id=>document.getElementById(id);
+const seedEls={};
+function buildSeedBar(){
+  const bar=$('seedBar');
+  for(const id of SEED_ORDER){
+    const p=PLANTS[id];
+    const el=document.createElement('div');
+    el.className='seed'; el.dataset.id=id;
+    el.innerHTML=`<span class="icon">${p.icon}</span><span class="nm">${p.name}</span><span class="cost">☀ ${p.cost}</span><div class="cd"></div>`;
+    el.addEventListener('pointerdown',e=>{ e.stopPropagation(); selectSeed(id); });
+    bar.appendChild(el); seedEls[id]=el;
+  }
+  const sh=document.createElement('div');
+  sh.className='seed'; sh.id='shovel';
+  sh.innerHTML=`<span class="icon">⛏️</span><span class="cost">PALA</span>`;
+  sh.addEventListener('pointerdown',e=>{ e.stopPropagation(); toggleShovel(); });
+  bar.appendChild(sh);
+}
+buildSeedBar();
+function selectSeed(id){
+  if(S.phase!=='play') return;
+  initAudio();
+  const p=PLANTS[id];
+  if(S.cds[id]>0 || S.sun<p.cost){ tone(140,80,0.1,'square',0.1); return; }
+  S.shovel=false;
+  S.selected=(S.selected===id)?null:id;
+  refreshHud();
+  showHint(S.selected?`${p.name}: clic en el césped para plantar · encima de otra planta para FUSIONAR 🧬`:'');
+}
+function toggleShovel(){
+  if(S.phase!=='play') return;
+  initAudio();
+  S.shovel=!S.shovel; S.selected=null; refreshHud();
+  showHint(S.shovel?'Pala: haz clic en una planta para quitarla':'');
+}
+function refreshHud(){
+  $('sunCount').textContent=Math.floor(S.sun);
+  for(const id of SEED_ORDER){
+    const el=seedEls[id], p=PLANTS[id];
+    el.classList.toggle('sel',S.selected===id);
+    el.classList.toggle('off',S.sun<p.cost||S.cds[id]>0);
+    el.querySelector('.cd').style.height=(S.cds[id]>0?(S.cds[id]/p.cdMax*100):0)+'%';
+  }
+  $('shovel').classList.toggle('sel',S.shovel);
+  $('waveFill').style.width=(S.spawnedZ/S.totalZ*100)+'%';
+}
+let hintTimer=0;
+function showHint(txt){
+  const h=$('hint');
+  if(!txt){ h.classList.add('hidden'); return; }
+  h.textContent=txt; h.classList.remove('hidden');
+  clearTimeout(hintTimer); hintTimer=setTimeout(()=>h.classList.add('hidden'),4000);
+}
+function showMsg(txt){
+  const m=$('msg'); m.textContent=txt; m.classList.add('show'); S.msgT=2.6;
+  SFX.wave();
+}
+
+/* ---------------- Acciones del jugador ---------------- */
+function plantAt(row,col){ return S.plants.find(p=>p.row===row&&p.col===col); }
+function makePlant(type,row,col){
+  const d=PLANTS[type];
+  return {type,row,col,hp:d.hp,maxHp:d.hp, fireT:Math.random()*0.8, sunT:3+Math.random()*3, bombT:d.bomb?1.1:0, ph:Math.random()*7, flash:0};
+}
+function spawnParts(x,y,z,color,n,pow){
+  for(let i=0;i<n;i++){
+    S.parts.push({x,y,z, vx:(Math.random()-0.5)*pow, vy:Math.random()*pow*0.9+1, vz:(Math.random()-0.5)*pow,
+      life:0.5+Math.random()*0.5, size:0.06+Math.random()*0.1, color});
+  }
+}
+function tryPlace(row,col){
+  const sel=S.selected; if(!sel) return;
+  const def=PLANTS[sel];
+  const exist=plantAt(row,col);
+  if(exist){
+    const out=FUSIONS[[sel,exist.type].sort().join('+')];
+    if(!out){ showHint('❌ Esa fusión no existe'); tone(140,80,0.12,'square',0.12); return; }
+    if(S.sun<def.cost) return;
+    S.sun-=def.cost;
+    const hyb=makePlant(out,row,col);
+    hyb.flash=0.6;
+    S.plants[S.plants.indexOf(exist)]=hyb;
+    S.cds[sel]=def.cdMax; S.selected=null;
+    spawnParts(cellX(col),0.9,cellZ(row),[1,0.9,0.3],26,2.4);
+    SFX.fuse();
+    showHint(`🧬 ¡Fusión! → ${PLANTS[out].name}`);
+  }else{
+    if(S.sun<def.cost) return;
+    S.sun-=def.cost;
+    S.plants.push(makePlant(sel,row,col));
+    S.cds[sel]=def.cdMax; S.selected=null;
+    spawnParts(cellX(col),0.3,cellZ(row),[0.45,0.3,0.15],10,1.5);
+    SFX.plant();
+  }
+  refreshHud();
+}
+function tryShovel(row,col){
+  const p=plantAt(row,col);
+  if(p){ S.plants.splice(S.plants.indexOf(p),1); spawnParts(cellX(col),0.5,cellZ(row),[0.4,0.7,0.3],12,2); SFX.shovel(); }
+  S.shovel=false; refreshHud();
+}
+function explode(x,row,radCol,radRow,dmg){
+  SFX.boom();
+  spawnParts(x,0.8,cellZ(row),[1,0.55,0.1],40,4.5);
+  spawnParts(x,0.8,cellZ(row),[0.3,0.3,0.3],20,3);
+  for(const z of S.zombies){
+    if(Math.abs(z.row-row)<=radRow && Math.abs(z.x-x)<=radCol) damageZombie(z,dmg);
+  }
+}
+function damageZombie(z,dmg,slow){
+  z.hp-=dmg; z.flash=0.12;
+  if(slow){ z.slowT=4; SFX.freeze(); }
+}
+
+canvas.addEventListener('pointerdown',e=>{
+  initAudio();
+  if(S.phase!=='play') return;
+  const px=e.clientX, py=e.clientY;
+  // 1) recoger sol (área de toque mayor con dedo que con ratón)
+  let best=null,bd=(e.pointerType==='touch')?70:48;
+  for(const s of S.suns){
+    const sp=projectToScreen([s.x,s.y,s.z]); if(!sp) continue;
+    const d=Math.hypot(sp[0]-px,sp[1]-py);
+    if(d<bd){bd=d;best=s;}
+  }
+  if(best){
+    S.sun+=best.value; S.suns.splice(S.suns.indexOf(best),1);
+    spawnParts(best.x,best.y,best.z,[1,0.95,0.35],10,1.6);
+    SFX.sun(); refreshHud(); return;
+  }
+  // 2) césped
+  const w=screenRayToGround(px,py); if(!w) return;
+  const c=worldToCell(w); if(!c) return;
+  if(S.shovel) tryShovel(c.row,c.col);
+  else if(S.selected) tryPlace(c.row,c.col);
+});
+canvas.addEventListener('pointermove',e=>{
+  const w=screenRayToGround(e.clientX,e.clientY);
+  S.hover=w?worldToCell(w):null;
+});
+window.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){ S.selected=null; S.shovel=false; refreshHud(); }
+});
+window.addEventListener('contextmenu',e=>{ e.preventDefault(); S.selected=null; S.shovel=false; refreshHud(); });
+
+/* ---------------- Lógica ---------------- */
+function makeZombie(type,row){
+  const d=ZTYPES[type];
+  return {type,row,x:5.6+Math.random()*0.6,hp:d.hp,maxHp:d.hp,speed:d.speed,slowT:0,flash:0,eating:null,ph:Math.random()*7};
+}
+function frontZombie(row,minX){
+  let best=null;
+  for(const z of S.zombies) if(z.row===row && z.x>minX && z.x<5.6 && (!best||z.x<best.x)) best=z;
+  return best;
+}
+function update(dt){
+  S.t+=dt;
+  // eventos
+  while(S.evIdx<S.timeline.length && S.timeline[S.evIdx].t<=S.t){
+    const ev=S.timeline[S.evIdx++];
+    if(ev.msg) showMsg(ev.msg);
+    if(ev.spawn){ S.zombies.push(makeZombie(ev.spawn,ev.row)); S.spawnedZ++; refreshHud(); }
+  }
+  if(S.msgT>0){ S.msgT-=dt; if(S.msgT<=0) $('msg').classList.remove('show'); }
+  // cooldowns
+  for(const id of SEED_ORDER){ if(S.cds[id]>0){ S.cds[id]=Math.max(0,S.cds[id]-dt); if(S.cds[id]===0) refreshHud(); } }
+  // sol del cielo
+  S.skySun-=dt;
+  if(S.skySun<=0){
+    S.skySun=8+Math.random()*4;
+    S.suns.push({x:(Math.random()*8-4),y:9,z:(Math.random()*4-2),vy:-1.15,value:25,life:12});
+  }
+  // plantas
+  for(const p of [...S.plants]){
+    const d=PLANTS[p.type];
+    if(p.flash>0)p.flash-=dt;
+    if(d.bomb){
+      p.bombT-=dt;
+      if(p.bombT<=0){ S.plants.splice(S.plants.indexOf(p),1); explode(cellX(p.col),p.row,1.6,1,900); }
+      continue;
+    }
+    if(d.sunEvery){
+      p.sunT-=dt;
+      if(p.sunT<=0){
+        p.sunT=d.sunEvery;
+        const n=d.sunDouble?2:1;
+        for(let i=0;i<n;i++)
+          S.suns.push({x:cellX(p.col)+(Math.random()-0.5)*0.7,y:1.4,z:cellZ(p.row)+(Math.random()-0.5)*0.4,vy:-0.8,value:25,life:9});
+      }
+    }
+    if(d.fireEvery){
+      p.fireT-=dt;
+      if(p.fireT<=0){
+        const tgt=frontZombie(p.row,cellX(p.col)-0.3);
+        if(tgt){
+          p.fireT=d.fireEvery;
+          if(d.lob){
+            const px=cellX(p.col), dist=Math.max(tgt.x+0.3-px,0.8), T=dist/3.2;
+            const vy=(0.5-1.15+0.5*9.8*T*T)/T;
+            S.shots.push({kind:'lob',x:px,y:1.15,z:cellZ(p.row),row:p.row,vx:3.2,vy,age:0,T,dmg:d.dmg,slow:!!d.slow});
+            SFX.shoot();
+          }else{
+            for(let i=0;i<(d.shots||1);i++)
+              S.shots.push({kind:d.slow?'ice':'pea',x:cellX(p.col)+0.3+i*-0.35,y:0.72,z:cellZ(p.row),row:p.row,dmg:d.dmg,slow:!!d.slow});
+            SFX.shoot();
+          }
+        }
+      }
+    }
+  }
+  // proyectiles
+  for(const s of [...S.shots]){
+    if(s.kind==='lob'){
+      s.age+=dt; s.x+=s.vx*dt; s.y+=s.vy*dt; s.vy-=9.8*dt;
+      if(s.age>=s.T||s.y<=0.35){
+        S.shots.splice(S.shots.indexOf(s),1);
+        spawnParts(s.x,0.6,s.z,s.slow?[0.55,0.85,1]:[0.35,0.75,0.3],16,2.6);
+        SFX.hit();
+        for(const z of S.zombies) if(z.row===s.row&&Math.abs(z.x-s.x)<1.0) damageZombie(z,s.dmg,s.slow);
+      }
+      continue;
+    }
+    s.x+=6.5*dt;
+    if(s.x>6.5){ S.shots.splice(S.shots.indexOf(s),1); continue; }
+    for(const z of S.zombies){
+      if(z.row===s.row && Math.abs(z.x-s.x)<0.35){
+        S.shots.splice(S.shots.indexOf(s),1);
+        damageZombie(z,s.dmg,s.slow);
+        spawnParts(s.x,s.y,s.z,s.slow?[0.6,0.85,1]:[0.5,0.85,0.35],6,1.4);
+        SFX.hit();
+        break;
+      }
+    }
+  }
+  // zombis
+  for(const z of [...S.zombies]){
+    if(z.flash>0)z.flash-=dt;
+    if(z.slowT>0)z.slowT-=dt;
+    if(z.hp<=0){
+      S.zombies.splice(S.zombies.indexOf(z),1); S.kills++;
+      spawnParts(z.x,1,cellZ(z.row),[0.5,0.62,0.45],18,2.6);
+      continue;
+    }
+    const spd=z.speed*(z.slowT>0?0.45:1);
+    // ¿planta delante?
+    z.eating=null;
+    const col=Math.round(z.x+4);
+    if(col>=0&&col<=8){
+      const p=plantAt(z.row,col);
+      if(p && z.x<=cellX(col)+0.45 && z.x>=cellX(col)-0.15) z.eating=p;
+    }
+    if(z.eating){
+      const p=z.eating;
+      p.hp-=32*dt; p.flash=0.1;
+      if(Math.random()<dt*2.2) SFX.bite();
+      if(p.hp<=0){
+        S.plants.splice(S.plants.indexOf(p),1);
+        if(PLANTS[p.type].deathBomb) explode(cellX(p.col),p.row,1.6,1,900);
+        else spawnParts(cellX(p.col),0.5,cellZ(p.row),[0.4,0.6,0.25],14,2);
+      }
+    }else{
+      z.x-=spd*dt;
+    }
+    // cortacésped / derrota
+    const mw=S.mowers.find(m=>m.row===z.row&&!m.active&&!m.gone);
+    if(z.x<-4.55 && mw){ mw.active=true; SFX.mower(); }
+    if(z.x<-5.0 && !S.mowers.find(m=>m.row===z.row&&(m.active||!m.gone))) gameOver(false);
+    if(z.x<-5.2) gameOver(false);
+  }
+  // cortacéspedes
+  for(const m of S.mowers){
+    if(!m.active) continue;
+    m.x+=4.2*dt;
+    for(const z of S.zombies) if(z.row===m.row&&Math.abs(z.x-m.x)<0.55){ z.hp=0; }
+    if(m.x>7){ m.active=false; m.gone=true; }
+  }
+  // soles
+  for(const s of [...S.suns]){
+    if(s.y>0.55) s.y=Math.max(0.55,s.y+s.vy*dt);
+    else { s.life-=dt; if(s.life<=0) S.suns.splice(S.suns.indexOf(s),1); }
+  }
+  // partículas
+  for(const p of [...S.parts]){
+    p.life-=dt;
+    if(p.life<=0){ S.parts.splice(S.parts.indexOf(p),1); continue; }
+    p.x+=p.vx*dt; p.y+=p.vy*dt; p.z+=p.vz*dt; p.vy-=7*dt;
+    if(p.y<0.03){p.y=0.03;p.vy*=-0.3;}
+  }
+  // victoria
+  if(S.evIdx>=S.timeline.length && S.zombies.length===0 && S.spawnedZ>=S.totalZ) gameOver(true);
+}
+function gameOver(win){
+  if(S.phase!=='play') return;
+  S.phase=win?'win':'lose';
+  const ov=$('endOverlay'), t=$('endTitle');
+  t.textContent=win?'🏆 ¡VICTORIA!':'☠ ¡LOS ZOMBIS TE COMIERON EL CEREBRO!';
+  t.className=win?'':'lose';
+  $('endSub').textContent=win?`Sobreviviste a la horda completa · ${S.kills} zombis eliminados`:`Eliminaste ${S.kills} zombis antes de caer`;
+  setTimeout(()=>ov.classList.remove('hidden'),win?400:900);
+  if(win)SFX.win(); else SFX.lose();
+}
+
+/* ---------------- Modelos 3D ---------------- */
+const C_STEM=[0.29,0.6,0.2], C_LEAF=[0.35,0.72,0.25];
+function drawStem(m,sway){
+  draw(CYL,C_STEM,m4S(m4T(m4RZ(m,sway*0.5),0,0.28,0),0.13,0.56,0.13));
+  draw(BOX,C_LEAF,m4S(m4RY(m4T(m,0.12,0.1,0.1),0.6),0.3,0.05,0.16));
+  draw(BOX,C_LEAF,m4S(m4RY(m4T(m,-0.1,0.12,-0.1),2.5),0.3,0.05,0.16));
+}
+function drawSnout(mh,color,dy,dz){
+  // hocico apuntando +x (hacia los zombis)
+  draw(CYL,color,m4S(m4T(m4RZ(m4T(mh,0.18,dy||0,dz||0),-Math.PI/2),0,0.14,0),0.17,0.3,0.17));
+}
+function sunHead(mh,t,pl){
+  draw(SPH,[1,0.85,0.15],m4S(mh,0.62,0.62,0.28));
+  for(let k=0;k<8;k++){
+    const a=k/8*Math.PI*2+t*0.4;
+    draw(BOX,[1,0.78,0.1],m4S(m4T(m4RZ(mh,a),0.36,0,0.02),0.24,0.13,0.05),0.25);
+  }
+  draw(SPH,[0.45,0.28,0.1],m4S(m4T(mh,0,0,0.12),0.34,0.34,0.2));
+}
+const plantDraw={
+  girasol(m,t,pl){
+    drawStem(m,Math.sin(t*1.8+pl.ph)*0.12);
+    sunHead(m4T(m,0,0.78,0.05),t,pl);
+  },
+  girasolgemelo(m,t,pl){
+    drawStem(m,Math.sin(t*1.8+pl.ph)*0.1);
+    sunHead(m4T(m,-0.22,0.72,0.05),t,pl);
+    sunHead(m4T(m,0.22,0.9,0.05),t+2,pl);
+  },
+  guisante(m,t,pl){
+    drawStem(m,Math.sin(t*2+pl.ph)*0.1);
+    const mh=m4T(m,0,0.78,0);
+    draw(SPH,[0.36,0.75,0.25],m4S(mh,0.55,0.55,0.55));
+    drawSnout(mh,[0.3,0.62,0.2]);
+    draw(BOX,C_LEAF,m4S(m4T(mh,0,0.3,0),0.08,0.2,0.08));
+  },
+  repetidora(m,t,pl){
+    drawStem(m,Math.sin(t*2+pl.ph)*0.1);
+    const mh=m4T(m,0,0.78,0);
+    draw(SPH,[0.32,0.7,0.22],m4S(mh,0.58,0.58,0.58));
+    drawSnout(mh,[0.27,0.58,0.18],0.08);
+    drawSnout(m4T(mh,-0.14,0,0),[0.27,0.58,0.18],-0.06);
+    draw(BOX,C_LEAF,m4S(m4T(mh,0,0.32,0),0.08,0.2,0.08));
+  },
+  hielo(m,t,pl){
+    drawStem(m,Math.sin(t*2+pl.ph)*0.1);
+    const mh=m4T(m,0,0.78,0);
+    draw(SPH,[0.45,0.72,0.95],m4S(mh,0.55,0.55,0.55));
+    drawSnout(mh,[0.35,0.6,0.9]);
+    draw(CONE,[0.75,0.9,1],m4S(m4T(mh,0,0.34,0),0.12,0.25,0.12),0.3);
+    draw(CONE,[0.75,0.9,1],m4S(m4RZ(m4T(mh,-0.16,0.26,0),0.5),0.09,0.2,0.09),0.3);
+  },
+  repgelida(m,t,pl){
+    drawStem(m,Math.sin(t*2+pl.ph)*0.1);
+    const mh=m4T(m,0,0.78,0);
+    draw(SPH,[0.4,0.66,0.92],m4S(mh,0.58,0.58,0.58));
+    drawSnout(mh,[0.3,0.55,0.85],0.08);
+    drawSnout(m4T(mh,-0.14,0,0),[0.3,0.55,0.85],-0.06);
+    draw(CONE,[0.78,0.92,1],m4S(m4T(mh,0,0.36,0),0.12,0.26,0.12),0.3);
+  },
+  girasolguisante(m,t,pl){
+    drawStem(m,Math.sin(t*1.9+pl.ph)*0.1);
+    const mh=m4T(m,0,0.78,0.03);
+    draw(SPH,[0.85,0.75,0.2],m4S(mh,0.56,0.56,0.45));
+    for(let k=0;k<8;k++){
+      const a=k/8*Math.PI*2+t*0.4;
+      draw(BOX,[1,0.8,0.12],m4S(m4T(m4RZ(mh,a),0.36,0,0),0.22,0.12,0.05),0.25);
+    }
+    drawSnout(mh,[0.55,0.6,0.18]);
+  },
+  nuez(m,t,pl){
+    const b=Math.sin(t*2.4+pl.ph)*0.04;
+    const mn=m4T(m,0,0.42+b,0);
+    draw(SPH,[0.62,0.42,0.2],m4S(mn,0.72,0.9,0.66));
+    draw(SPH,[0.15,0.1,0.06],m4S(m4T(mn,-0.12,0.12,0.28),0.09,0.13,0.06));
+    draw(SPH,[0.15,0.1,0.06],m4S(m4T(mn,0.12,0.12,0.28),0.09,0.13,0.06));
+  },
+  nuezblindada(m,t,pl){
+    const b=Math.sin(t*2.4+pl.ph)*0.03;
+    const mn=m4T(m,0,0.45+b,0);
+    draw(SPH,[0.55,0.36,0.16],m4S(mn,0.78,0.98,0.72));
+    draw(CYL,[0.62,0.65,0.7],m4S(m4T(mn,0,0.1,0),0.82,0.3,0.76));
+    draw(CYL,[0.55,0.58,0.62],m4S(m4T(mn,0,0.42,0),0.5,0.16,0.46));
+    draw(SPH,[0.12,0.09,0.05],m4S(m4T(mn,-0.12,-0.14,0.3),0.09,0.12,0.06));
+    draw(SPH,[0.12,0.09,0.05],m4S(m4T(mn,0.12,-0.14,0.3),0.09,0.12,0.06));
+  },
+  nuezcanon(m,t,pl){
+    const b=Math.sin(t*2.4+pl.ph)*0.03;
+    const mn=m4T(m,0,0.42+b,0);
+    draw(SPH,[0.62,0.42,0.2],m4S(mn,0.72,0.9,0.66));
+    drawSnout(m4T(mn,0.15,0.15,0),[0.35,0.32,0.28]);
+    draw(SPH,[0.15,0.1,0.06],m4S(m4T(mn,-0.1,0.3,0.26),0.09,0.12,0.06));
+  },
+  nuezexplosiva(m,t,pl){
+    const pulse=1+Math.sin(t*6+pl.ph)*0.04;
+    const mn=m4T(m,0,0.42,0);
+    draw(SPH,[0.7,0.3,0.18],m4S(mn,0.72*pulse,0.9*pulse,0.66*pulse));
+    draw(CYL,[0.3,0.28,0.25],m4S(m4T(mn,0,0.5,0),0.08,0.2,0.08));
+    draw(SPH,[1,0.6,0.1],m4S(m4T(mn,0,0.64,0),0.1+Math.sin(t*9)*0.04,0.1,0.1),0.9);
+    draw(SPH,[0.15,0.1,0.06],m4S(m4T(mn,-0.12,0.12,0.28),0.09,0.13,0.06));
+    draw(SPH,[0.15,0.1,0.06],m4S(m4T(mn,0.12,0.12,0.28),0.09,0.13,0.06));
+  },
+  cereza(m,t,pl){
+    const p=1+Math.sin(t*10)*0.08*(1.1-pl.bombT);
+    draw(CYL,[0.3,0.5,0.2],m4S(m4T(m,0,0.3,0),0.07,0.5,0.07));
+    draw(SPH,[0.85,0.15,0.1],m4S(m4T(m,-0.2,0.6,0),0.42*p,0.42*p,0.42*p),0.3);
+    draw(SPH,[0.75,0.1,0.08],m4S(m4T(m,0.2,0.72,0),0.4*p,0.4*p,0.4*p),0.3);
+  },
+  melon(m,t,pl){
+    draw(BOX,[0.32,0.55,0.2],m4S(m4T(m,0,0.18,0),0.7,0.34,0.6));
+    const arm=m4RZ(m4T(m,-0.15,0.35,0),0.6+Math.sin(t*2+pl.ph)*0.06);
+    draw(BOX,[0.4,0.62,0.25],m4S(m4T(arm,0,0.3,0),0.12,0.6,0.12));
+    const bk=m4T(arm,0,0.62,0);
+    draw(SPH,[0.25,0.6,0.2],m4S(bk,0.5,0.42,0.5));
+    draw(SPH,[0.16,0.45,0.14],m4S(m4T(bk,0,0.06,0),0.42,0.4,0.42));
+  },
+  meloninvernal(m,t,pl){
+    draw(BOX,[0.3,0.45,0.55],m4S(m4T(m,0,0.18,0),0.7,0.34,0.6));
+    const arm=m4RZ(m4T(m,-0.15,0.35,0),0.6+Math.sin(t*2+pl.ph)*0.06);
+    draw(BOX,[0.35,0.5,0.65],m4S(m4T(arm,0,0.3,0),0.12,0.6,0.12));
+    const bk=m4T(arm,0,0.62,0);
+    draw(SPH,[0.45,0.72,0.9],m4S(bk,0.5,0.42,0.5),0.15);
+    draw(CONE,[0.8,0.92,1],m4S(m4T(bk,0,0.3,0),0.1,0.2,0.1),0.3);
+  },
+};
+function drawPlant(pl,t){
+  let m=m4T(m4ident(),cellX(pl.col),0,cellZ(pl.row));
+  const hurt=pl.flash>0?0.5:0;
+  if(hurt){
+    // sacudida al recibir daño / fusionar
+    m=m4T(m,Math.sin(t*60)*0.03,0,0);
+  }
+  (plantDraw[pl.type]||plantDraw.guisante)(m,t,pl);
+}
+
+/* -------- zombis -------- */
+function drawZombie(z,t){
+  const walk=t*6*(z.slowT>0?0.5:1)+z.ph;
+  const eat=z.eating?Math.sin(t*14)*0.12:0;
+  let m=m4T(m4ident(),z.x,0,cellZ(z.row));
+  m=m4RY(m,Math.PI/2); // mira hacia -x
+  let skin=[0.55,0.66,0.5], shirt=[0.45,0.35,0.28], pants=[0.25,0.28,0.35];
+  if(z.type==='corredor'){ shirt=[0.6,0.25,0.2]; m=m4RX(m,0.18); }
+  if(z.flash>0){ skin=mixC(skin,[1,1,1],0.7); shirt=mixC(shirt,[1,1,1],0.7); }
+  if(z.slowT>0){ skin=mixC(skin,[0.4,0.6,1],0.45); shirt=mixC(shirt,[0.4,0.6,1],0.45); }
+  const bob=Math.abs(Math.sin(walk))*0.05;
+  const mb=m4T(m,0,bob,0);
+  // piernas
+  for(const s of [-1,1]){
+    const lm=m4RX(m4T(mb,s*0.11,0.52,0),Math.sin(walk+ (s>0?0:Math.PI))*0.5);
+    draw(BOX,pants,m4S(m4T(lm,0,-0.26,0),0.15,0.52,0.15));
+  }
+  // cuerpo
+  draw(BOX,shirt,m4S(m4T(mb,0,0.82,0),0.42,0.55,0.26));
+  // brazos extendidos hacia delante
+  for(const s of [-1,1]){
+    const am=m4RX(m4T(mb,s*0.24,1.02,0),-Math.PI/2+Math.sin(walk+s)*0.12+eat);
+    draw(BOX,skin,m4S(m4T(am,0,-0.28,0),0.11,0.5,0.11));
+  }
+  // cabeza
+  const hm=m4T(mb,0,1.36+eat*0.3,0);
+  const headTilt=m4RZ(hm,Math.sin(walk*0.5)*0.08);
+  draw(SPH,skin,m4S(headTilt,0.42,0.44,0.4));
+  draw(SPH,[0.1,0.1,0.1],m4S(m4T(headTilt,-0.1,0.04,0.17),0.08,0.08,0.05));
+  draw(SPH,[0.1,0.1,0.1],m4S(m4T(headTilt,0.1,0.04,0.17),0.08,0.08,0.05));
+  if(z.type==='cono') draw(CONE,[0.85,0.5,0.15],m4S(m4T(headTilt,0,0.32,0),0.4,0.45,0.4));
+  if(z.type==='cubo') draw(CYL,[0.6,0.63,0.68],m4S(m4T(headTilt,0,0.3,0),0.46,0.4,0.46));
+  // barra de vida
+  if(z.hp<z.maxHp){
+    const f=Math.max(z.hp/z.maxHp,0);
+    let bm=m4T(m4ident(),z.x,1.95,cellZ(z.row));
+    draw(BOX,[0.15,0.05,0.05],m4S(bm,0.5,0.06,0.02),1);
+    draw(BOX,[0.2,0.9,0.2],m4S(m4T(bm,-(1-f)*0.25,0,0.01),0.5*f,0.06,0.02),1);
+  }
+}
+
+/* -------- escenario -------- */
+function drawScene(t){
+  const I=m4ident();
+  // tierra base
+  draw(BOX,[0.24,0.42,0.16],m4S(m4T(I,0.5,-0.55,0),15,1,7.6));
+  // celdas
+  for(let r=0;r<5;r++)for(let c=0;c<9;c++){
+    const col=(r+c)%2?[0.36,0.62,0.22]:[0.42,0.7,0.26];
+    draw(BOX,col,m4S(m4T(I,cellX(c),-0.03,cellZ(r)),0.98,0.1,0.98));
+  }
+  // camino de los zombis
+  draw(BOX,[0.45,0.4,0.36],m4S(m4T(I,5.6,-0.02,0),2.2,0.1,5.2));
+  for(let i=0;i<3;i++){
+    const gm=m4T(I,5.2+i*0.55,0.3,-1.6+i*1.5);
+    draw(BOX,[0.5,0.5,0.55],m4S(gm,0.35,0.6,0.12));
+    draw(CYL,[0.5,0.5,0.55],m4S(m4T(gm,0,0.3,0),0.35,0.12,0.12));
+  }
+  // casa
+  const hm=m4T(I,-5.9,0,0);
+  draw(BOX,[0.75,0.62,0.45],m4S(m4T(hm,0,1.1,0),1.6,2.2,5.4));
+  draw(BOX,[0.55,0.25,0.2],m4S(m4T(hm,0,2.5,0),2,0.6,5.8));
+  draw(BOX,[0.4,0.25,0.12],m4S(m4T(hm,0.81,0.7,0),0.05,1.4,0.9));
+  for(const zz of [-1.8,1.8]) draw(BOX,[0.65,0.85,1],m4S(m4T(hm,0.81,1.5,zz),0.04,0.7,0.9),0.4);
+  // valla al fondo
+  for(let i=0;i<16;i++) draw(BOX,[0.85,0.82,0.75],m4S(m4T(I,-4.7+i*0.75,0.45,-2.95),0.14,0.9,0.08));
+  draw(BOX,[0.8,0.77,0.7],m4S(m4T(I,0.9,0.6,-2.95),11.5,0.12,0.06));
+  draw(BOX,[0.8,0.77,0.7],m4S(m4T(I,0.9,0.25,-2.95),11.5,0.12,0.06));
+  // arbustos
+  for(let i=0;i<7;i++){
+    draw(SPH,[0.16,0.4,0.14],m4S(m4T(I,-4.5+i*1.6,0.3,3.15),1.1,0.8,0.7));
+  }
+  // sol decorativo + nubes
+  draw(SPH,[1,0.92,0.5],m4S(m4T(I,-7,9,-9),2,2,2),1);
+  for(const [cx,cy,cz] of [[-3,7.5,-8],[3.5,8.2,-9],[7,6.8,-7]]){
+    draw(SPH,[1,1,1],m4S(m4T(I,cx,cy,cz),2.4,0.9,1),0.85);
+    draw(SPH,[1,1,1],m4S(m4T(I,cx+1,cy+0.3,cz),1.6,0.8,1),0.85);
+  }
+  // cortacéspedes
+  for(const m of S.mowers){
+    if(m.gone&&!m.active) continue;
+    const mm=m4T(I,m.x,0,cellZ(m.row));
+    const spin=m.active?t*20:0;
+    draw(BOX,[0.75,0.2,0.15],m4S(m4T(mm,0,0.22,0),0.5,0.28,0.4));
+    draw(CYL,[0.3,0.3,0.32],m4S(m4RX(m4T(mm,0.18,0.12,0),spin),0.24,0.42,0.24));
+    draw(BOX,[0.4,0.4,0.42],m4S(m4RZ(m4T(mm,-0.25,0.42,0),0.7),0.06,0.5,0.06));
+  }
+}
+function drawShot(s,t){
+  const I=m4ident();
+  if(s.kind==='lob'){
+    const mm=m4RX(m4T(I,s.x,s.y,s.z),t*7);
+    draw(SPH,s.slow?[0.5,0.78,1]:[0.3,0.65,0.25],m4S(mm,0.4,0.36,0.4),s.slow?0.3:0);
+    return;
+  }
+  const col=s.kind==='ice'?[0.55,0.8,1]:[0.45,0.85,0.3];
+  draw(SPH,col,m4S(m4T(I,s.x,s.y,s.z),0.22,0.22,0.22),0.35);
+}
+function drawSun(s,t){
+  const mm=m4RY(m4T(m4ident(),s.x,s.y,s.z),t*2);
+  const fade=s.y<=0.56&&s.life<2?Math.max(s.life/2,0):1;
+  curAlpha=fade;
+  draw(SPH,[1,0.85,0.2],m4S(mm,0.5,0.5,0.5),1);
+  for(let k=0;k<6;k++){
+    draw(BOX,[1,0.9,0.3],m4S(m4T(m4RZ(mm,k/6*Math.PI*2+t*3),0.34,0,0),0.2,0.09,0.06),1);
+  }
+  curAlpha=1;
+}
+
+/* -------- highlight de celda -------- */
+function drawHighlight(){
+  if(!S.hover||S.phase!=='play'||(!S.selected&&!S.shovel)) return;
+  const {row,col}=S.hover;
+  const exist=plantAt(row,col);
+  let color=[1,1,1];
+  if(S.shovel) color=exist?[1,0.5,0.2]:[0.6,0.6,0.6];
+  else if(exist){
+    const ok=FUSIONS[[S.selected,exist.type].sort().join('+')];
+    color=ok?[1,0.85,0.1]:[1,0.2,0.15];
+  }
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
+  gl.depthMask(false);
+  curAlpha=0.4;
+  draw(BOX,color,m4S(m4T(m4ident(),cellX(col),0.05,cellZ(row)),0.95,0.08,0.95),1);
+  curAlpha=1;
+  gl.depthMask(true);
+  gl.disable(gl.BLEND);
+}
+
+/* ---------------- Bucle principal ---------------- */
+let last=0;
+function frame(ts){
+  requestAnimationFrame(frame);
+  const dt=Math.min((ts-last)/1000||0.016,0.05);
+  last=ts;
+  if(S.phase==='play') update(dt);
+  const t=S.t;
+  updateCam(t);
+  gl.clearColor(0.5,0.76,0.95,1);
+  gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+  gl.uniformMatrix4fv(loc.uProj,false,proj);
+  gl.uniformMatrix4fv(loc.uView,false,view);
+
+  drawScene(t);
+  for(const p of S.plants) drawPlant(p,t);
+  for(const z of S.zombies) drawZombie(z,t);
+  for(const s of S.shots) drawShot(s,t);
+  for(const p of S.parts){
+    const a=Math.min(p.life*2,1);
+    draw(BOX,p.color,m4S(m4RY(m4T(m4ident(),p.x,p.y,p.z),p.life*8),p.size*a,p.size*a,p.size*a),0.4);
+  }
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
+  for(const s of S.suns) drawSun(s,t);
+  gl.disable(gl.BLEND);
+  drawHighlight();
+}
+
+/* ---------------- Inicio ---------------- */
+function startGame(){
+  S=newState();
+  for(let r=0;r<5;r++) S.mowers.push({row:r,x:-5.1,active:false,gone:false});
+  SEED_ORDER.forEach(id=>S.cds[id]=0);
+  S.phase='play';
+  $('menuOverlay').classList.add('hidden');
+  $('endOverlay').classList.add('hidden');
+  $('hud').classList.remove('hidden');
+  refreshHud();
+  showHint('Recoge el sol ☀️ y planta girasoles primero');
+  window.__game=makeTestApi();
+}
+/* En celulares: pantalla completa e intento de girar a horizontal,
+   donde el jardín se ve más grande. Si falla, el modo vertical
+   también funciona porque la cámara se adapta. */
+function fullscreenLandscape(){
+  if(!window.matchMedia('(pointer:coarse)').matches) return;
+  const el=document.documentElement;
+  const lock=()=>{
+    if(screen.orientation && screen.orientation.lock)
+      screen.orientation.lock('landscape').catch(()=>{});
+  };
+  try{
+    const p=el.requestFullscreen ? el.requestFullscreen() : (el.webkitRequestFullscreen&&el.webkitRequestFullscreen());
+    if(p&&p.then) p.then(lock).catch(()=>{}); else lock();
+  }catch(err){}
+}
+$('playBtn').addEventListener('click',()=>{ initAudio(); fullscreenLandscape(); startGame(); });
+$('againBtn').addEventListener('click',()=>{ initAudio(); startGame(); });
+
+/* API para pruebas automatizadas */
+function makeTestApi(){
+  return {
+    get state(){ return S; },
+    select:selectSeed,
+    place:tryPlace,
+    plantAt,
+    PLANTS,FUSIONS,
+    addSun:v=>{S.sun+=v;refreshHud();},
+  };
+}
+window.__game=makeTestApi();
+
+resize();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
