@@ -1,0 +1,9 @@
+{
+  "mod_id": "stellar_guardians",
+  "name": "Stellar Guardians",
+  "description": "Añade una nueva raza cósmica con poderes estelares, unidades épicas y eventos celestiales.",
+  "version": "1.0.0",
+  "author": "AI Creator",
+  "worldbox_version": "0.20.0+",
+  "tags": ["race", "fantasy", "cosmic", "powers"]
+}
