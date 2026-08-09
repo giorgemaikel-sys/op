@@ -1,0 +1,12 @@
+{
+  "id": "elemental_champions",
+  "name": "Elemental Champions",
+  "author": "AI Mod Creator",
+  "version": "1.0.0",
+  "description": "Un mod que añade 5 clanes elementales (Fuego, Agua, Tierra, Aire, Rayo) con campeones únicos, habilidades especiales y un sistema de afinidad elemental.",
+  "game_version": "0.24.0",
+  "entry_point": "Code/Main.cs",
+  "dependencies": [],
+  "tags": ["clans", "elements", "champions", "fantasy"],
+  "language": "es"
+}
