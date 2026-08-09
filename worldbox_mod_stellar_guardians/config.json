@@ -1,0 +1,260 @@
+// Stellar Guardians - Race Configuration
+// WorldBox Mod Configuration File
+
+{
+  "race": {
+    "id": "stellar_guardians",
+    "name": "Stellar Guardians",
+    "display_name": "Guardianes Estelares",
+    "type": "cosmic",
+    "alignment": "neutral_good",
+    "lifespan_min": 500,
+    "lifespan_max": 800,
+    "color_primary": "#4A90E2",
+    "color_secondary": "#F5A623",
+    "color_accent": "#7B68EE",
+    
+    "habitat_preferences": {
+      "mountains": 1.0,
+      "floating_islands": 1.0,
+      "craters": 0.9,
+      "plains": 0.3,
+      "forests": 0.2,
+      "deserts": 0.1,
+      "water": 0.0
+    },
+    
+    "stats": {
+      "base_health": 150,
+      "base_attack": 25,
+      "base_defense": 20,
+      "base_speed": 1.2,
+      "farming_skill": 0.8,
+      "mining_skill": 1.5,
+      "combat_skill": 1.3,
+      "magic_skill": 1.8
+    }
+  },
+  
+  "units": [
+    {
+      "id": "star_child",
+      "name": "Star Child",
+      "display_name": "Niño Estelar",
+      "type": "civilian",
+      "age_stage": "adult",
+      "health": 80,
+      "attack": 5,
+      "defense": 10,
+      "speed": 1.0,
+      "special_abilities": ["stellar_energy_collection"],
+      "description": "Un joven guardián que puede recolectar energía de las estrellas."
+    },
+    {
+      "id": "cosmic_warrior",
+      "name": "Cosmic Warrior",
+      "display_name": "Guerrero Cósmico",
+      "type": "military",
+      "age_stage": "adult",
+      "health": 150,
+      "attack": 35,
+      "defense": 30,
+      "speed": 1.3,
+      "weapon": "stellar_blade",
+      "special_abilities": ["star_beam_attack", "cosmic_shield"],
+      "description": "Guerrero élite armado con energía estelar."
+    },
+    {
+      "id": "nebula_mage",
+      "name": "Nebula Mage",
+      "display_name": "Mago de Nebulosa",
+      "type": "mage",
+      "age_stage": "elder",
+      "health": 100,
+      "attack": 45,
+      "defense": 15,
+      "speed": 0.9,
+      "weapon": "cosmic_staff",
+      "special_abilities": ["gravity_well", "spatial_distortion", "nebula_cloud"],
+      "description": "Maestro de la magia gravitacional y espacial."
+    },
+    {
+      "id": "galaxy_titan",
+      "name": "Galaxy Titan",
+      "display_name": "Titán Galáctico",
+      "type": "legendary",
+      "age_stage": "ancient",
+      "health": 2000,
+      "attack": 200,
+      "defense": 150,
+      "speed": 0.5,
+      "weapon": "galaxy_hammer",
+      "special_abilities": ["black_hole_creation", "supernova_blast", "cosmic_stomp"],
+      "spawn_requirement": "rare_event",
+      "description": "Ser legendario con el poder de una galaxia."
+    }
+  ],
+  
+  "buildings": [
+    {
+      "id": "star_shrine",
+      "name": "Star Shrine",
+      "display_name": "Santuario Estelar",
+      "type": "religious",
+      "health": 500,
+      "construction_time": 120,
+      "resources_required": {
+        "stone": 100,
+        "stellar_crystal": 20
+      },
+      "effects": ["mana_regeneration", "blessing_of_stars"]
+    },
+    {
+      "id": "cosmic_forge",
+      "name": "Cosmic Forge",
+      "display_name": "Forja Cósmica",
+      "type": "production",
+      "health": 400,
+      "construction_time": 90,
+      "resources_required": {
+        "iron": 150,
+        "stellar_crystal": 30
+      },
+      "effects": ["enhanced_weapon_crafting", "stellar_infusion"]
+    },
+    {
+      "id": "observatory",
+      "name": "Stellar Observatory",
+      "display_name": "Observatorio Estelar",
+      "type": "research",
+      "health": 300,
+      "construction_time": 150,
+      "resources_required": {
+        "wood": 100,
+        "stellar_crystal": 50
+      },
+      "effects": ["cosmic_knowledge", "prophecy_insight"]
+    }
+  ],
+  
+  "resources": [
+    {
+      "id": "stellar_crystal",
+      "name": "Stellar Crystal",
+      "display_name": "Cristal Estelar",
+      "type": "mineral",
+      "rarity": "rare",
+      "spawn_condition": "meteor_impact",
+      "uses": ["crafting", "magic", "building"]
+    },
+    {
+      "id": "cosmic_energy",
+      "name": "Cosmic Energy",
+      "display_name": "Energía Cósmica",
+      "type": "magical",
+      "rarity": "uncommon",
+      "spawn_condition": "passive_generation",
+      "uses": ["spells", "buffs", "special_abilities"]
+    },
+    {
+      "id": "stardust",
+      "name": "Stardust",
+      "display_name": "Polvo de Estrellas",
+      "type": "material",
+      "rarity": "common",
+      "spawn_condition": "night_time_collection",
+      "uses": ["advanced_crafting", "enchanting"]
+    }
+  ],
+  
+  "divine_powers": [
+    {
+      "id": "meteor_shower",
+      "name": "Meteor Shower",
+      "display_name": "Lluvia de Meteoritos",
+      "type": "destructive",
+      "mana_cost": 150,
+      "cooldown": 300,
+      "area_effect": true,
+      "damage": 500,
+      "secondary_effect": "creates_stellar_crystals",
+      "description": "Invoca una lluvia devastadora de meteoritos."
+    },
+    {
+      "id": "stellar_nova",
+      "name": "Stellar Nova",
+      "display_name": "Nova Estelar",
+      "type": "hybrid",
+      "mana_cost": 200,
+      "cooldown": 400,
+      "area_effect": true,
+      "damage_to_enemies": 800,
+      "heal_to_allies": 400,
+      "description": "Explosión estelar que daña enemigos y cura aliados."
+    },
+    {
+      "id": "zero_gravity",
+      "name": "Zero Gravity",
+      "display_name": "Gravedad Cero",
+      "type": "utility",
+      "mana_cost": 80,
+      "cooldown": 180,
+      "area_effect": true,
+      "duration": 60,
+      "effects": ["reduced_movement", "floating_units"],
+      "description": "Crea una zona de gravedad reducida."
+    },
+    {
+      "id": "dimensional_portal",
+      "name": "Dimensional Portal",
+      "display_name": "Portal Dimensional",
+      "type": "utility",
+      "mana_cost": 120,
+      "cooldown": 240,
+      "area_effect": false,
+      "effect": "teleportation",
+      "description": "Abre un portal para teletransportar unidades."
+    }
+  ],
+  
+  "events": [
+    {
+      "id": "planetary_alignment",
+      "name": "Planetary Alignment",
+      "display_name": "Alineación Planetaria",
+      "type": "periodic",
+      "frequency_years": 50,
+      "duration_years": 5,
+      "effects": {
+        "all_guardians_power_boost": 1.5,
+        "magic_regeneration_bonus": 2.0
+      },
+      "notification": "¡Los planetas se alinean! Los Guardianes Estelares obtienen poder aumentado."
+    },
+    {
+      "id": "nearby_supernova",
+      "name": "Nearby Supernova",
+      "display_name": "Supernova Cercana",
+      "type": "random",
+      "chance_yearly": 0.02,
+      "effects": {
+        "global_damage": 100,
+        "mutation_chance": 0.3,
+        "blessing_granted": true
+      },
+      "notification": "¡Una supernova explota cerca! Peligro y bendiciones llegan al mundo."
+    },
+    {
+      "id": "comet_visit",
+      "name": "Comet Visit",
+      "display_name": "Visita de Cometa",
+      "type": "random",
+      "chance_yearly": 0.05,
+      "effects": {
+        "resource_spawn": ["stellar_crystal", "stardust"],
+        "mutation_chance": 0.1
+      },
+      "notification": "¡Un cometa cruza el cielo! Trae recursos raros."
+    }
+  ]
+}
